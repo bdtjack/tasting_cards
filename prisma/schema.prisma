@@ -1,0 +1,116 @@
+// Database schema for the tasting card platform.
+//
+// Multi-tenant design: every Product belongs to exactly one Business via
+// businessId. All queries in the app must be scoped by businessId so that
+// one business can never see or edit another's data — enforced via
+// lib/auth.ts's getCurrentBusiness(), never via a hardcoded slug.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // Postgres for real deployment (Vercel's serverless functions have no
+  // persistent local disk, so SQLite's single-file approach doesn't work
+  // there — this needs an actual hosted database, e.g. Neon, Supabase, or
+  // Railway). `url` comes from DATABASE_URL, set in .env locally and in
+  // Vercel's project settings for the deployed app.
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// BusinessCategory and ProductStatus are plain strings (allowed values
+// enforced in code — see lib/types.ts) rather than native enums, and
+// priceLabels/prices below are JSON-encoded text rather than a native
+// Json column. Both were originally required for SQLite compatibility;
+// now that this runs on Postgres, they *could* become real `enum` and
+// `Json` columns for a cleaner schema — left as plain strings for now to
+// avoid touching working code right before a live demo. Worth revisiting
+// once things have settled.
+
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  category  String // "WINERY" | "BREWERY" | "DISTILLERY" | "MIXED" — see lib/types.ts
+  createdAt DateTime @default(now())
+
+  // Login credentials. One login per business for now — if this ever needs
+  // multiple staff logins per business, that becomes a separate User model
+  // with its own businessId, not fields directly on Business.
+  email        String @unique
+  passwordHash String
+
+  // Theme fields — applied to every guest-facing card for this business.
+  logoUrl      String?
+  primaryColor String        @default("#0D0D0D")
+  accentColor  String        @default("#C9A24B")
+
+  products Product[]
+  sessions Session[]
+}
+
+// A logged-in session, looked up by its token on every dashboard request.
+// Deleting the row (or letting it pass expiresAt) ends the session — no
+// separate revocation list needed.
+model Session {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+}
+
+model Product {
+  id         String        @id @default(cuid())
+  businessId String
+  business   Business      @relation(fields: [businessId], references: [id])
+
+  slug     String
+  name     String
+  category String // varietal (wine) or style (beer/spirits)
+  subtitle String? // vintage, edition, etc.
+
+  // Locked in at creation time from the business's category — does not
+  // change retroactively if the business's category setting changes later.
+  showAbv  Boolean @default(false)
+  proofAbv String?
+
+  aroma  String?
+  palate String?
+  finish String?
+
+  // Price labels are locked in from the business's category at creation
+  // time (same pattern as showAbv above) — e.g. ["Glass", "Bottle"] for a
+  // winery, ["Taste", "Pour", "Pack"] for a brewery. `prices` maps each
+  // label to its value, e.g. {"Glass": "$12.00", "Bottle": "$38.00"}.
+  // Stored as JSON-encoded text — SQLite's Prisma connector has no native
+  // Json column type (unlike Postgres/MySQL) — parsed/stringified in code,
+  // see lib/json.ts.
+  priceLabels String? // JSON-encoded string[]
+  prices      String? // JSON-encoded Record<string, string>
+
+  mailingListLink String?
+  photoUrl        String?
+
+  status String @default("DRAFT") // "DRAFT" | "PUBLISHED" | "ARCHIVED" — see lib/types.ts
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  scans Scan[]
+
+  // Slug only needs to be unique within a business, not globally —
+  // two different wineries can both have a product slug "pinto-2022".
+  @@unique([businessId, slug])
+}
+
+// Minimal scan log for the "scans per product" dashboard stat.
+// Kept append-only and intentionally sparse (no guest PII).
+model Scan {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  scannedAt DateTime @default(now())
+}
