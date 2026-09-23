@@ -94,10 +94,10 @@ account:
 - **Email:** `owner@hiddenhills.example`
 - **Password:** `changeme123`
 
-Change that password before this goes anywhere near real use — there's no
-"change password" UI yet, so for now that means updating the `passwordHash`
-directly (hash a new one with `bcrypt.hash()` and update the row via
-`npx prisma studio`, or just edit `prisma/seed.ts` and re-seed).
+Change that password before this goes anywhere near real use, especially
+once deployed — there's a **Password** section at the bottom of
+`/dashboard/settings` for this now (current password + new password +
+confirmation, at least 8 characters).
 
 Sessions last 30 days and are stored in the `Session` table — logging out
 deletes the row and clears the cookie.

@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentBusiness } from "@/lib/auth";
+import { getCurrentBusiness, verifyPassword, hashPassword } from "@/lib/auth";
 
 export async function updateBusinessTheme(formData: FormData) {
   const business = await getCurrentBusiness();
@@ -23,4 +23,34 @@ export async function updateBusinessTheme(formData: FormData) {
   });
 
   redirect("/dashboard/settings?saved=1");
+}
+
+export async function changePassword(formData: FormData) {
+  const business = await getCurrentBusiness();
+  if (!business) redirect("/login");
+
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const newPassword = String(formData.get("newPassword") ?? "");
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+  const currentIsCorrect = await verifyPassword(currentPassword, business.passwordHash);
+  if (!currentIsCorrect) {
+    redirect("/dashboard/settings?pwError=current");
+  }
+
+  if (newPassword.length < 8) {
+    redirect("/dashboard/settings?pwError=short");
+  }
+
+  if (newPassword !== confirmPassword) {
+    redirect("/dashboard/settings?pwError=mismatch");
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await prisma.business.update({
+    where: { id: business.id },
+    data: { passwordHash },
+  });
+
+  redirect("/dashboard/settings?pwSaved=1");
 }
