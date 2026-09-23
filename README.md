@@ -25,10 +25,22 @@ This is a working scaffold of the core loop:
   logo, and primary/accent colors, with a live preview that updates as
   you type. The card URL slug is shown but not editable here, since it's
   baked into every QR code already printed.
-- **QR generation** (`/api/qr/[businessSlug]/[productSlug]`) — plain
-  black-and-white QR pointing at the guest card, downloadable as PNG.
-- **Seed data** — Hidden Hills Farm and Vineyard + the Pinto 2022, matching
-  what we mocked up earlier.
+- **QR generation** — three kinds now, each downloadable as a plain
+  black-and-white PNG:
+  - `/api/qr/[businessSlug]/[productSlug]` — a single product's card
+  - `/api/qr/menu/[businessSlug]` — the full menu
+  - `/api/qr/flight/[businessSlug]/[flightSlug]` — one curated flight
+- **Full menu page** (`/[businessSlug]`) — lists every published product
+  (plus sold-out/archived ones, marked as such) and any flights, each
+  linking into its own existing card. One QR for "everything we pour,"
+  downloadable from the top of the dashboard.
+- **Flights** (`/dashboard/flights`) — group a curated, ordered subset of
+  published products into a named tasting (e.g. "Reserve Flight"), with
+  its own guest-facing page and QR code, separate from both the full menu
+  and any single product. `flights` is a reserved product slug so it can
+  never collide with the `/[businessSlug]/flights/...` route.
+- **Seed data** — Hidden Hills Farm and Vineyard, two products (Pinto 2022
+  and Reserve Estate Red), and a sample "Reserve Flight" containing both.
 
 ## What's NOT here yet (by design)
 
@@ -48,17 +60,18 @@ This is a working scaffold of the core loop:
 npm install
 ```
 
-Create a `.env` file (already created for you) with:
+Create a `.env` file with your Postgres connection string (see "Deploying
+for real" below for how to get one from Neon for free):
 
 ```
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
 ```
 
 Then set up the database:
 
 ```bash
-npm run db:push    # creates dev.db with the schema above
-npm run db:seed    # adds Hidden Hills + Pinto 2022
+npm run db:push    # creates all tables from the schema above
+npm run db:seed    # adds Hidden Hills + 2 products + a sample flight
 ```
 
 Run it:
@@ -66,6 +79,11 @@ Run it:
 ```bash
 npm run dev
 ```
+
+If you already had this running before the menu/flights feature was
+added, the schema changed (two new tables: `Flight` and `FlightItem`) —
+run `npm run db:push` and `npm run db:seed` again against your existing
+database to pick them up; it won't touch your existing products.
 
 ## Logging in
 
@@ -85,8 +103,11 @@ Sessions last 30 days and are stored in the `Session` table — logging out
 deletes the row and clears the cookie.
 
 - Dashboard: http://localhost:3000/dashboard
+- Full menu: http://localhost:3000/hidden-hills
 - Guest card: http://localhost:3000/hidden-hills/pinto-2022
-- QR download: http://localhost:3000/api/qr/hidden-hills/pinto-2022
+- Flight page: http://localhost:3000/hidden-hills/flights/reserve-flight
+- QR downloads: `/api/qr/hidden-hills/pinto-2022`,
+  `/api/qr/menu/hidden-hills`, `/api/qr/flight/hidden-hills/reserve-flight`
 
 ## Demoing on the same Wi-Fi (no deployment needed)
 

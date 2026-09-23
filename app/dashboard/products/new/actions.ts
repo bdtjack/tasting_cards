@@ -4,15 +4,8 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { defaultShowAbv } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
+import { productSlugify } from "@/lib/slug";
 import type { BusinessCategory } from "@/lib/types";
-
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 export async function createProduct(formData: FormData) {
   const business = await getCurrentBusiness();
@@ -33,7 +26,7 @@ export async function createProduct(formData: FormData) {
   await prisma.product.create({
     data: {
       businessId: business.id,
-      slug: slugify(name),
+      slug: productSlugify(name),
       name,
       category: String(formData.get("category") ?? ""),
       subtitle: String(formData.get("subtitle") ?? "") || null,

@@ -36,6 +36,12 @@ export default async function DashboardPage() {
             Settings
           </Link>
           <Link
+            href="/dashboard/flights"
+            className="text-sm px-3 py-2 border border-neutral-300 rounded-md"
+          >
+            Flights
+          </Link>
+          <Link
             href="/dashboard/products/new"
             className="text-sm px-4 py-2 bg-neutral-900 text-white rounded-md"
           >
@@ -47,6 +53,29 @@ export default async function DashboardPage() {
             </button>
           </form>
         </div>
+      </div>
+
+      <div className="mb-6 flex items-center gap-4 border border-neutral-200 rounded-xl p-4 bg-white">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/api/qr/menu/${business.slug}`}
+          alt="Menu QR code"
+          className="w-16 h-16 border border-neutral-200 rounded-md bg-white p-1 flex-shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">Full menu QR code</p>
+          <p className="text-xs text-neutral-500">
+            One QR for everything currently published — separate from each
+            product's own code.
+          </p>
+        </div>
+        <a
+          href={`/api/qr/menu/${business.slug}`}
+          download
+          className="text-sm px-3 py-1.5 border border-neutral-300 rounded-md flex-shrink-0"
+        >
+          Download PNG
+        </a>
       </div>
 
       {business.products.length === 0 ? (

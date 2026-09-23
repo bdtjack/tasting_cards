@@ -48,6 +48,7 @@ model Business {
 
   products Product[]
   sessions Session[]
+  flights  Flight[]
 }
 
 // A logged-in session, looked up by its token on every dashboard request.
@@ -99,7 +100,8 @@ model Product {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  scans Scan[]
+  scans       Scan[]
+  flightItems FlightItem[]
 
   // Slug only needs to be unique within a business, not globally —
   // two different wineries can both have a product slug "pinto-2022".
@@ -113,4 +115,37 @@ model Scan {
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   scannedAt DateTime @default(now())
+}
+
+// A curated, ordered subset of a business's products — e.g. "Reserve
+// Flight" — with its own guest-facing page and QR code, separate from
+// both the full menu and any individual product's card. "flights" is a
+// reserved product slug (see the create-product action) so this route
+// never collides with a product's own guest card at the same URL depth.
+model Flight {
+  id          String  @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  slug        String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+
+  items FlightItem[]
+
+  @@unique([businessId, slug])
+}
+
+// Join row linking a Flight to one of its Products, with an explicit
+// order so the business controls the sequence guests see (e.g. lightest
+// to boldest), not just insertion order.
+model FlightItem {
+  id        String  @id @default(cuid())
+  flightId  String
+  flight    Flight  @relation(fields: [flightId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  order     Int     @default(0)
+
+  @@unique([flightId, productId])
 }
