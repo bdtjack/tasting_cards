@@ -1,12 +1,53 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { parseJsonField } from "@/lib/json";
 import GuestCard from "@/components/GuestCard";
 
+type Params = { businessSlug: string; productSlug: string };
+
+// Drives the link-preview card shown by iMessage, Facebook, Instagram
+// Stories, etc. when the "Share" button's URL gets pasted or forwarded.
+// Those apps ignore whatever title/text navigator.share() sends — they
+// re-fetch the URL and read ITS OWN metadata, so without this they all
+// fall back to the generic site-wide title in app/layout.tsx.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { businessSlug, productSlug } = await params;
+
+  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
+  if (!business) return {};
+
+  const product = await prisma.product.findUnique({
+    where: { businessId_slug: { businessId: business.id, slug: productSlug } },
+  });
+  if (!product || product.status === "DRAFT") return {};
+
+  const title = `${product.name} — ${business.name}`;
+  const description =
+    product.status === "ARCHIVED"
+      ? `No longer available — join ${business.name}'s list to hear about the next release.`
+      : [
+          [product.category, product.subtitle].filter(Boolean).join(" · "),
+          product.aroma,
+        ]
+          .filter(Boolean)
+          .join(". ");
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+  };
+}
+
 export default async function GuestCardPage({
   params,
 }: {
-  params: Promise<{ businessSlug: string; productSlug: string }>;
+  params: Promise<Params>;
 }) {
   const { businessSlug, productSlug } = await params;
 

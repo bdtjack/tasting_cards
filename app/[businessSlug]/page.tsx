@@ -1,10 +1,27 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+
+type Params = { businessSlug: string };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { businessSlug } = await params;
+  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
+  if (!business) return {};
+
+  const title = `${business.name} — Menu`;
+  const description = `See what's being poured at ${business.name}.`;
+  return { title, description, openGraph: { title, description } };
+}
 
 export default async function MenuPage({
   params,
 }: {
-  params: Promise<{ businessSlug: string }>;
+  params: Promise<Params>;
 }) {
   const { businessSlug } = await params;
 

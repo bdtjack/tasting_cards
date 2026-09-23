@@ -1,10 +1,32 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+
+type Params = { businessSlug: string; flightSlug: string };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<Params>;
+}): Promise<Metadata> {
+  const { businessSlug, flightSlug } = await params;
+  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
+  if (!business) return {};
+
+  const flight = await prisma.flight.findUnique({
+    where: { businessId_slug: { businessId: business.id, slug: flightSlug } },
+  });
+  if (!flight) return {};
+
+  const title = `${flight.name} — ${business.name}`;
+  const description = flight.description ?? `A curated tasting flight from ${business.name}.`;
+  return { title, description, openGraph: { title, description } };
+}
 
 export default async function FlightPage({
   params,
 }: {
-  params: Promise<{ businessSlug: string; flightSlug: string }>;
+  params: Promise<Params>;
 }) {
   const { businessSlug, flightSlug } = await params;
 
