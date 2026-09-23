@@ -39,15 +39,15 @@ This is a working scaffold of the core loop:
   its own guest-facing page and QR code, separate from both the full menu
   and any single product. `flights` is a reserved product slug so it can
   never collide with the `/[businessSlug]/flights/...` route.
-- **Share previews** — the "Share" button on a guest card uses the
-  phone's native share sheet (falls back to copying the link on
-  desktop). Each product/menu/flight page also sets its own title,
-  description, and a dynamically generated branded thumbnail image (via
-  Next.js's `opengraph-image.tsx` convention — no external image hosting
-  needed), so pasting a link into iMessage, Facebook, etc. shows the
-  actual product instead of a generic site-wide preview. If a business's
-  logo URL is ever broken, image generation falls back to a plain neutral
-  card rather than failing the whole preview.
+- **Sharing** — on phones, the guest card's Share button sends the card
+  itself as an image (the same picture "Save card" makes), so it posts to
+  Stories, Messages, etc. looking like the real card. If a phone or app
+  can't take images, it shares the link instead; on desktop it copies the
+  link. Shared *links* show a branded thumbnail generated on the fly by
+  each route's `opengraph-image.tsx` (serif name, gold divider, tasting
+  notes, prices), using the Crimson Text font in `assets/fonts` (SIL Open
+  Font License). A broken logo URL falls back to a plain thumbnail
+  instead of breaking the preview.
 - **Seed data** — Hidden Hills Farm and Vineyard, two products (Pinto 2022
   and Reserve Estate Red), and a sample "Reserve Flight" containing both.
 

@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
-import { OG_SIZE, fallbackOgImage, LogoBadge } from "@/lib/og";
+import { OG_SIZE, fallbackOgImage, LogoBadge, ogOptions } from "@/lib/og";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -19,6 +19,8 @@ export default async function Image({ params }: { params: Promise<Params> }) {
     : null;
 
   if (!business || !flight) return fallbackOgImage();
+
+  const options = await ogOptions();
 
   try {
     return new ImageResponse(
@@ -45,12 +47,21 @@ export default async function Image({ params }: { params: Promise<Params> }) {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", marginTop: 64 }}>
-            <span style={{ color: "#F5F1E8", fontSize: 76, fontWeight: 700 }}>
+            <span style={{ fontFamily: "Serif", color: "#F5F1E8", fontSize: 84 }}>
               {flight.name}
             </span>
             <span style={{ color: business.accentColor, fontSize: 28, marginTop: 16 }}>
               {flight._count.items} tasting{flight._count.items === 1 ? "" : "s"}
             </span>
+            <div
+              style={{
+                display: "flex",
+                height: 2,
+                width: 360,
+                marginTop: 28,
+                backgroundImage: `linear-gradient(90deg, ${business.accentColor}, transparent)`,
+              }}
+            />
           </div>
 
           {flight.description && (
@@ -62,7 +73,7 @@ export default async function Image({ params }: { params: Promise<Params> }) {
           )}
         </div>
       ),
-      size
+      options
     );
   } catch (err) {
     console.error("OG image generation failed, falling back:", err);

@@ -1,11 +1,12 @@
 import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
-import { OG_SIZE, fallbackOgImage, LogoBadge } from "@/lib/og";
+import { parseJsonField } from "@/lib/json";
+import { OG_SIZE, fallbackOgImage, LogoBadge, ogOptions } from "@/lib/og";
 
-// This file is a Next.js convention, not a normal page: dropping an
-// "opengraph-image.tsx" file in a route segment tells Next.js to render
-// this as that route's og:image automatically — no manual <meta> tag
-// needed, and generateMetadata (in page.tsx) doesn't have to reference it.
+// Next.js convention: a file named opengraph-image.tsx becomes this route's
+// og:image automatically. This is the thumbnail shown when a card's LINK is
+// shared (iMessage, Facebook, etc). It's laid out like the tasting card
+// turned sideways: name on the left, tasting notes on the right.
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -22,14 +23,23 @@ export default async function Image({ params }: { params: Promise<Params> }) {
       })
     : null;
 
-  if (!business || !product) return fallbackOgImage();
+  if (!business || !product || product.status === "DRAFT") return fallbackOgImage();
 
+  const accent = business.accentColor;
   const isArchived = product.status === "ARCHIVED";
   const subtitle = [product.category, product.subtitle].filter(Boolean).join(" · ");
+  const prices = Object.entries(parseJsonField<Record<string, string>>(product.prices, {})).filter(
+    ([, v]) => v
+  );
+  const notes = [
+    product.showAbv && product.proofAbv ? ["Proof / ABV", product.proofAbv] : null,
+    product.aroma ? ["Aroma", product.aroma] : null,
+    product.palate ? ["Palate", product.palate] : null,
+    product.finish ? ["Finish", product.finish] : null,
+  ].filter((n): n is string[] => n !== null);
 
-  // A business's logoUrl is a raw pasted link with no validation — if it's
-  // broken or unreachable, rendering would otherwise throw and break the
-  // whole preview image rather than just the logo. Fall back cleanly.
+  const options = await ogOptions();
+
   try {
     return new ImageResponse(
       (
@@ -38,57 +48,101 @@ export default async function Image({ params }: { params: Promise<Params> }) {
             width: "100%",
             height: "100%",
             display: "flex",
-            flexDirection: "column",
-            padding: 80,
             background: business.primaryColor,
+            padding: 64,
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <LogoBadge
-              logoUrl={business.logoUrl}
-              name={business.name}
-              accentColor={business.accentColor}
-            />
-            <span style={{ color: business.accentColor, fontSize: 24, letterSpacing: 2 }}>
-              {business.name.toUpperCase()}
-            </span>
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", marginTop: 64 }}>
-            <span style={{ color: "#F5F1E8", fontSize: 84, fontWeight: 700 }}>
-              {product.name}
-            </span>
-            {subtitle && (
-              <span style={{ color: business.accentColor, fontSize: 32, marginTop: 12 }}>
-                {subtitle.toUpperCase()}
+          {/* Left: identity */}
+          <div style={{ display: "flex", flexDirection: "column", width: 560, paddingRight: 48 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <LogoBadge logoUrl={business.logoUrl} name={business.name} accentColor={accent} />
+              <span style={{ color: accent, fontSize: 20, letterSpacing: 3 }}>
+                {business.name.toUpperCase()}
               </span>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", marginTop: 72 }}>
+              <span style={{ fontFamily: "Serif", color: "#F5F1E8", fontSize: 76, lineHeight: 1.05 }}>
+                {product.name}
+              </span>
+              {subtitle && (
+                <span style={{ color: accent, fontSize: 22, letterSpacing: 2, marginTop: 16 }}>
+                  {subtitle.toUpperCase()}
+                </span>
+              )}
+              <div
+                style={{
+                  display: "flex",
+                  height: 2,
+                  width: 360,
+                  marginTop: 28,
+                  backgroundImage: `linear-gradient(90deg, ${accent}, transparent)`,
+                }}
+              />
+            </div>
+
+            {!isArchived && prices.length > 0 && (
+              <div style={{ display: "flex", gap: 28, marginTop: "auto" }}>
+                {prices.map(([label, value]) => (
+                  <div key={label} style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <span style={{ color: accent, fontSize: 20 }}>{label}</span>
+                    <span style={{ fontFamily: "Serif", color: "#F5F1E8", fontSize: 30 }}>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
 
-          <div style={{ display: "flex", marginTop: 40 }}>
+          {/* Right: tasting notes (or sold-out message) */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              flex: 1,
+              paddingLeft: 48,
+              borderLeft: `1px solid ${accent}40`,
+              gap: 26,
+            }}
+          >
             {isArchived ? (
-              <span
-                style={{
-                  color: business.accentColor,
-                  fontSize: 28,
-                  background: `${business.accentColor}20`,
-                  padding: "8px 20px",
-                  borderRadius: 8,
-                }}
-              >
-                No longer available
-              </span>
-            ) : (
-              product.aroma && (
-                <span style={{ color: "#E8DFC8", fontSize: 30, maxWidth: 900 }}>
-                  {product.aroma}
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <span
+                  style={{
+                    display: "flex",
+                    alignSelf: "flex-start",
+                    color: accent,
+                    fontSize: 20,
+                    letterSpacing: 2,
+                    background: `${accent}22`,
+                    padding: "6px 16px",
+                    borderRadius: 6,
+                  }}
+                >
+                  NO LONGER AVAILABLE
                 </span>
-              )
+                <span style={{ color: "#E8DFC8", fontSize: 26, lineHeight: 1.4 }}>
+                  This one sold out. Join the list to hear about the next release.
+                </span>
+              </div>
+            ) : (
+              notes.map(([label, value]) => (
+                <div key={label} style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ color: accent, fontSize: 16, letterSpacing: 3 }}>
+                    {label.toUpperCase()}
+                  </span>
+                  <span style={{ color: "#E8DFC8", fontSize: 26, marginTop: 6, lineHeight: 1.3 }}>
+                    {value}
+                  </span>
+                </div>
+              ))
             )}
           </div>
         </div>
       ),
-      size
+      options
     );
   } catch (err) {
     console.error("OG image generation failed, falling back:", err);
