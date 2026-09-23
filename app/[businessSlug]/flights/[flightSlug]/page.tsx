@@ -48,6 +48,7 @@ export default async function FlightPage({
         logoUrl: business.logoUrl,
         primaryColor: business.primaryColor,
         accentColor: business.accentColor,
+        mailingListLink: business.mailingListLink,
       }}
       flight={{
         name: flight.name,

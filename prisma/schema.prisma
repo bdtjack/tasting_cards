@@ -43,8 +43,13 @@ model Business {
 
   // Theme fields — applied to every guest-facing card for this business.
   logoUrl      String?
-  primaryColor String        @default("#0D0D0D")
-  accentColor  String        @default("#C9A24B")
+  primaryColor String @default("#0D0D0D")
+  accentColor  String @default("#C9A24B")
+
+  // Set once in dashboard settings, shown on every guest card (product,
+  // flight) — not a per-product field, since a business only has one
+  // mailing list to point guests to.
+  mailingListLink String?
 
   products Product[]
   sessions Session[]
@@ -92,8 +97,7 @@ model Product {
   priceLabels String? // JSON-encoded string[]
   prices      String? // JSON-encoded Record<string, string>
 
-  mailingListLink String?
-  photoUrl        String?
+  photoUrl String?
 
   status String @default("DRAFT") // "DRAFT" | "PUBLISHED" | "ARCHIVED" — see lib/types.ts
 

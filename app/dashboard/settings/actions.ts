@@ -19,6 +19,7 @@ export async function updateBusinessTheme(formData: FormData) {
       logoUrl: String(formData.get("logoUrl") ?? "").trim() || null,
       primaryColor: String(formData.get("primaryColor") ?? business.primaryColor),
       accentColor: String(formData.get("accentColor") ?? business.accentColor),
+      mailingListLink: String(formData.get("mailingListLink") ?? "").trim() || null,
     },
   });
 

@@ -39,7 +39,6 @@ export async function createProduct(formData: FormData) {
       finish: String(formData.get("finish") ?? "") || null,
       priceLabels: JSON.stringify(priceLabelList),
       prices: JSON.stringify(priceValues),
-      mailingListLink: String(formData.get("mailingListLink") ?? "") || null,
       status: publish ? "PUBLISHED" : "DRAFT",
     },
   });

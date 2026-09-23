@@ -74,10 +74,6 @@ export default async function NewProductPage() {
               </Field>
             ))}
           </div>
-
-          <Field label="Newsletter / mailing list link">
-            <input name="mailingListLink" className="input" placeholder="https://" />
-          </Field>
         </fieldset>
 
         <div className="flex gap-2 pt-2">

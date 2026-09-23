@@ -42,7 +42,6 @@ export async function updateProduct(formData: FormData) {
       finish: String(formData.get("finish") ?? "") || null,
       priceLabels: JSON.stringify(priceLabelList),
       prices: JSON.stringify(priceValues),
-      mailingListLink: String(formData.get("mailingListLink") ?? "") || null,
     },
   });
 

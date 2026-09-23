@@ -7,6 +7,7 @@ type Business = {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  mailingListLink: string | null;
 };
 
 type Product = {
@@ -20,7 +21,6 @@ type Product = {
   palate: string | null;
   finish: string | null;
   prices: Record<string, string>;
-  mailingListLink: string | null;
 };
 
 export default function GuestCard({
@@ -77,7 +77,7 @@ export default function GuestCard({
         </div>
 
         {isArchived ? (
-          <ArchivedBody accentColor={business.accentColor} mailingListLink={product.mailingListLink} />
+          <ArchivedBody accentColor={business.accentColor} mailingListLink={business.mailingListLink} />
         ) : (
           <>
             <div className="px-6 pb-1">
@@ -125,9 +125,9 @@ export default function GuestCard({
 
             {/* data-no-snapshot: left out of the saved/shared image — buttons in a picture are just noise. */}
             <div className="px-6 pb-6 pt-1.5 flex gap-2.5" data-no-snapshot>
-              {product.mailingListLink && (
+              {business.mailingListLink && (
                 <a
-                  href={product.mailingListLink}
+                  href={business.mailingListLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"

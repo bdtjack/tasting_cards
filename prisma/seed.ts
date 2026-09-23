@@ -21,6 +21,7 @@ async function main() {
       passwordHash,
       primaryColor: "#0D0D0D",
       accentColor: "#C9A24B",
+      mailingListLink: "https://example.com/hidden-hills-newsletter",
     },
   });
 

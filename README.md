@@ -22,9 +22,11 @@ This is a working scaffold of the core loop:
   as a PNG the guest can download (via `html-to-image`), rather than
   re-creating a separate template that could drift out of sync.
 - **Theme settings** (`/dashboard/settings`) — business name, category,
-  logo, and primary/accent colors, with a live preview that updates as
-  you type. The card URL slug is shown but not editable here, since it's
-  baked into every QR code already printed.
+  logo, primary/accent colors, and the newsletter/mailing list link
+  (shown as "Join the list" on every guest card — set once here, not
+  per product), with a live preview that updates as you type. The card
+  URL slug is shown but not editable here, since it's baked into every
+  QR code already printed.
 - **QR generation** — three kinds now, each downloadable as a plain
   black-and-white PNG:
   - `/api/qr/[businessSlug]/[productSlug]` — a single product's card

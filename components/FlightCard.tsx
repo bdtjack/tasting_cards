@@ -8,6 +8,7 @@ type Business = {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  mailingListLink: string | null;
 };
 
 type FlightProduct = {
@@ -114,15 +115,29 @@ export default function FlightCard({ business, flight }: { business: Business; f
         </div>
 
         {/* data-no-snapshot: left out of the saved/shared image — buttons in a picture are just noise. */}
-        <div className="px-6 pb-6 pt-3 flex gap-2.5" data-no-snapshot>
+        <div className="px-6 pb-2.5 pt-3" data-no-snapshot>
           <button
             onClick={handleSaveCard}
             disabled={saving}
-            className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium disabled:opacity-60"
+            className="w-full text-center text-sm px-4 py-2.5 rounded-md font-medium disabled:opacity-60"
             style={{ backgroundColor: business.accentColor, color: "#0D0D0D" }}
           >
             {saving ? "Saving…" : "Save card"}
           </button>
+        </div>
+
+        <div className="px-6 pb-6 flex gap-2.5" data-no-snapshot>
+          {business.mailingListLink && (
+            <a
+              href={business.mailingListLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
+              style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+            >
+              Join the list
+            </a>
+          )}
           <button
             onClick={handleShare}
             className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"

@@ -95,13 +95,6 @@ export default async function EditProductPage({
             ))}
           </div>
 
-          <Field label="Newsletter / mailing list link">
-            <input
-              name="mailingListLink"
-              defaultValue={product.mailingListLink ?? ""}
-              className="input"
-            />
-          </Field>
         </fieldset>
 
         <button type="submit" className="w-full px-4 py-2 bg-neutral-900 text-white rounded-md text-sm">

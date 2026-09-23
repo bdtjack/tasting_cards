@@ -19,6 +19,7 @@ export default function ThemeForm({
     logoUrl: string | null;
     primaryColor: string;
     accentColor: string;
+    mailingListLink: string | null;
   };
 }) {
   const [name, setName] = useState(business.name);
@@ -26,6 +27,7 @@ export default function ThemeForm({
   const [logoUrl, setLogoUrl] = useState(business.logoUrl ?? "");
   const [primaryColor, setPrimaryColor] = useState(business.primaryColor);
   const [accentColor, setAccentColor] = useState(business.accentColor);
+  const [mailingListLink, setMailingListLink] = useState(business.mailingListLink ?? "");
 
   const initials = name.trim().slice(0, 2).toUpperCase() || "??";
 
@@ -120,6 +122,25 @@ export default function ThemeForm({
               </div>
             </label>
           </div>
+        </div>
+
+        <div className="border-t border-neutral-200 pt-4">
+          <label className="block">
+            <span className="block text-sm text-neutral-600 mb-1">
+              Newsletter / mailing list link
+            </span>
+            <input
+              name="mailingListLink"
+              value={mailingListLink}
+              onChange={(e) => setMailingListLink(e.target.value)}
+              placeholder="https://"
+              className="input"
+            />
+            <span className="block text-xs text-neutral-500 mt-1">
+              Shown as &quot;Join the list&quot; on every guest card and flight —
+              set once here rather than per product.
+            </span>
+          </label>
         </div>
 
         <button

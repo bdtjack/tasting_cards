@@ -74,6 +74,7 @@ export default async function GuestCardPage({
         logoUrl: business.logoUrl,
         primaryColor: business.primaryColor,
         accentColor: business.accentColor,
+        mailingListLink: business.mailingListLink,
       }}
       product={{
         slug: product.slug,
@@ -86,7 +87,6 @@ export default async function GuestCardPage({
         palate: product.palate,
         finish: product.finish,
         prices: parseJsonField<Record<string, string>>(product.prices, {}),
-        mailingListLink: product.mailingListLink,
       }}
       isArchived={product.status === "ARCHIVED"}
     />
