@@ -32,7 +32,7 @@ async function main() {
       slug: "pinto-2022",
       name: "Pinto",
       category: "Pinot noir",
-      subtitle: "100% Pinot Noir · 2022 vintage",
+      subtitle: "2022 vintage",
       showAbv: false, // locked in from the winery category at creation time
       aroma: "Cherry, cranberry, fresh earth",
       palate: "Tart red berry, soft earthy undertone",

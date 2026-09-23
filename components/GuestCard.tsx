@@ -46,13 +46,14 @@ export default function GuestCard({
   const fileName = `${business.name.replace(/\s+/g, "-").toLowerCase()}-${product.slug}.png`;
 
   // Snapshot the actual rendered card, not a re-created copy of it, so the
-  // image always matches what the guest sees. The Share/Join button row is
-  // left out, since buttons in a picture are just noise.
+  // image always matches what the guest sees. Anything marked
+  // data-no-snapshot (the buttons) is left out, since buttons in a picture
+  // are just noise.
   async function makeCardPng(): Promise<string> {
     if (!cardRef.current) throw new Error("Card not rendered yet");
     return toPng(cardRef.current, {
       pixelRatio: 2,
-      filter: (node) => !(node instanceof HTMLElement && node.hasAttribute("data-share-row")),
+      filter: (node) => !(node instanceof HTMLElement && node.hasAttribute("data-no-snapshot")),
     });
   }
 
@@ -224,6 +225,7 @@ export default function GuestCard({
               )}
               <button
                 onClick={handleSaveCard}
+                data-no-snapshot
                 disabled={saving}
                 className="text-xs px-3.5 py-2 rounded-md font-medium disabled:opacity-60"
                 style={{ backgroundColor: business.accentColor, color: "#0D0D0D" }}
@@ -232,8 +234,8 @@ export default function GuestCard({
               </button>
             </div>
 
-            {/* Excluded from the saved image — buttons in a screenshot are just noise. */}
-            <div className="px-5 pb-5 pt-1 flex gap-2" data-share-row>
+            {/* data-no-snapshot: left out of the saved/shared image — buttons in a picture are just noise. */}
+            <div className="px-5 pb-5 pt-1 flex gap-2" data-no-snapshot>
               {product.mailingListLink && (
                 <a
                   href={product.mailingListLink}
