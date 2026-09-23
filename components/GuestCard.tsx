@@ -44,7 +44,11 @@ export default function GuestCard({
       // it — so what gets saved always matches what the guest is looking
       // at, including any theme changes, with no separate template to
       // keep in sync.
-      const dataUrl = await toPng(cardRef.current, { pixelRatio: 2 });
+      const dataUrl = await toPng(cardRef.current, {
+        pixelRatio: 2,
+        filter: (node) =>
+          !(node instanceof HTMLElement && node.hasAttribute("data-share-row")),
+      });
       const link = document.createElement("a");
       link.download = `${business.name.replace(/\s+/g, "-").toLowerCase()}-${product.slug}.png`;
       link.href = dataUrl;
@@ -57,6 +61,34 @@ export default function GuestCard({
       alert("Sorry, couldn't save the card image. Try again in a moment.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  const [copied, setCopied] = useState(false);
+
+  async function handleShare() {
+    const shareData = {
+      title: `${product.name} — ${business.name}`,
+      text: `Check out ${product.name} from ${business.name}`,
+      url: window.location.href,
+    };
+    // On phones, this opens the native share sheet (Messages, WhatsApp,
+    // email, etc). Desktop browsers often don't support it, so fall back to
+    // copying the link.
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch {
+        // User closed the share sheet — not an error worth reporting.
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert(window.location.href);
     }
   }
 
@@ -144,19 +176,27 @@ export default function GuestCard({
               </button>
             </div>
 
-            {product.mailingListLink && (
-              <div className="px-5 pb-5 pt-1">
+            {/* Excluded from the saved image — buttons in a screenshot are just noise. */}
+            <div className="px-5 pb-5 pt-1 flex gap-2" data-share-row>
+              {product.mailingListLink && (
                 <a
                   href={product.mailingListLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full text-center text-xs px-3.5 py-2 rounded-md font-medium border"
+                  className="flex-1 text-center text-xs px-3.5 py-2 rounded-md font-medium border"
                   style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
                 >
                   Join the list
                 </a>
-              </div>
-            )}
+              )}
+              <button
+                onClick={handleShare}
+                className="flex-1 text-center text-xs px-3.5 py-2 rounded-md font-medium border"
+                style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+              >
+                {copied ? "Link copied" : "Share"}
+              </button>
+            </div>
           </>
         )}
       </div>
