@@ -39,11 +39,10 @@ This is a working scaffold of the core loop:
   its own guest-facing page and QR code, separate from both the full menu
   and any single product. `flights` is a reserved product slug so it can
   never collide with the `/[businessSlug]/flights/...` route.
-- **Sharing** — on phones, the guest card's Share button sends the card
-  itself as an image (the same picture "Save card" makes), so it posts to
-  Stories, Messages, etc. looking like the real card. If a phone or app
-  can't take images, it shares the link instead; on desktop it copies the
-  link. Shared *links* show a branded thumbnail generated on the fly by
+- **Sharing** — on phones, the guest card's and flight card's Share
+  buttons send the card itself as an image (falls back to copying the
+  link on desktop). The shared logic lives in `lib/useCardShare.ts` so
+  both cards behave identically. Each product/menu/flight page also sets
   each route's `opengraph-image.tsx` (serif name, gold divider, tasting
   notes, prices), using the Crimson Text font in `assets/fonts` (SIL Open
   Font License). A broken logo URL falls back to a plain thumbnail

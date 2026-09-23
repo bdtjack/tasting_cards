@@ -42,53 +42,53 @@ export default async function MenuPage({
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <div
-        className="w-full max-w-sm rounded-xl overflow-hidden"
+        className="w-full max-w-lg rounded-xl overflow-hidden"
         style={{ backgroundColor: business.primaryColor }}
       >
         <div
-          className="px-5 py-4 flex items-center gap-2.5 border-b"
+          className="px-6 py-5 flex items-center gap-3 border-b"
           style={{ borderColor: `${business.accentColor}40` }}
         >
           {business.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.logoUrl} alt="" className="w-7 h-7 rounded-full" />
+            <img src={business.logoUrl} alt="" className="w-9 h-9 rounded-full" />
           ) : (
             <div
-              className="w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-serif"
+              className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-serif"
               style={{ borderColor: business.accentColor, color: business.accentColor }}
             >
               {business.name.slice(0, 2).toUpperCase()}
             </div>
           )}
-          <span className="text-xs tracking-wider uppercase" style={{ color: business.accentColor }}>
+          <span className="text-sm tracking-wider uppercase" style={{ color: business.accentColor }}>
             {business.name}
           </span>
         </div>
 
-        <div className="px-5 pt-5 pb-2">
-          <p className="font-serif text-2xl" style={{ color: "#F5F1E8" }}>
+        <div className="px-6 pt-7 pb-2">
+          <p className="font-serif text-[34px]" style={{ color: "#F5F1E8" }}>
             Menu
           </p>
         </div>
 
         {flights.length > 0 && (
-          <div className="px-5 pb-4">
-            <p className="text-[11px] tracking-wider uppercase mb-2" style={{ color: business.accentColor }}>
+          <div className="px-6 pb-5">
+            <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: business.accentColor }}>
               Tasting flights
             </p>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {flights.map((flight: (typeof flights)[number]) => (
                 <a
                   key={flight.id}
                   href={`/${business.slug}/flights/${flight.slug}`}
-                  className="block rounded-md px-3 py-2"
+                  className="block rounded-md px-4 py-2.5"
                   style={{ backgroundColor: `${business.accentColor}15` }}
                 >
-                  <span className="text-sm font-medium" style={{ color: "#F5F1E8" }}>
+                  <span className="text-base font-medium" style={{ color: "#F5F1E8" }}>
                     {flight.name}
                   </span>
                   {flight.description && (
-                    <span className="block text-xs mt-0.5" style={{ color: `${business.accentColor}CC` }}>
+                    <span className="block text-sm mt-1" style={{ color: `${business.accentColor}CC` }}>
                       {flight.description}
                     </span>
                   )}
@@ -98,8 +98,8 @@ export default async function MenuPage({
           </div>
         )}
 
-        <div className="px-5 pb-5">
-          <p className="text-[11px] tracking-wider uppercase mb-2" style={{ color: business.accentColor }}>
+        <div className="px-6 pb-6">
+          <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: business.accentColor }}>
             All products
           </p>
           {products.length === 0 ? (
@@ -115,19 +115,19 @@ export default async function MenuPage({
                 <a
                   key={product.id}
                   href={`/${business.slug}/${product.slug}`}
-                  className="flex items-center justify-between gap-3 py-2.5"
+                  className="flex items-center justify-between gap-3 py-3"
                 >
                   <span>
-                    <span className="block text-sm" style={{ color: "#F5F1E8" }}>
+                    <span className="block text-base" style={{ color: "#F5F1E8" }}>
                       {product.name}
                     </span>
-                    <span className="block text-xs" style={{ color: `${business.accentColor}AA` }}>
+                    <span className="block text-sm" style={{ color: `${business.accentColor}AA` }}>
                       {[product.category, product.subtitle].filter(Boolean).join(" · ")}
                     </span>
                   </span>
                   {product.status === "ARCHIVED" && (
                     <span
-                      className="text-[10px] px-2 py-0.5 rounded-md flex-shrink-0"
+                      className="text-xs px-2.5 py-1 rounded-md flex-shrink-0"
                       style={{ backgroundColor: `${business.accentColor}20`, color: business.accentColor }}
                     >
                       Sold out
