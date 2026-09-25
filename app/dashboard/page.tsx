@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
-import { logout } from "@/app/logout/actions";
 
 const STATUS_STYLES: Record<string, string> = {
   PUBLISHED: "bg-green-100 text-green-800",
@@ -26,32 +25,14 @@ export default async function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-medium">Products</h1>
-          <p className="text-sm text-neutral-500">{business.name}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard/settings"
-            className="text-sm px-3 py-2 border border-neutral-300 rounded-md"
-          >
-            Settings
-          </Link>
-          <Link
-            href="/dashboard/flights"
-            className="text-sm px-3 py-2 border border-neutral-300 rounded-md"
-          >
-            Flights
-          </Link>
           <Link
             href="/dashboard/products/new"
             className="text-sm px-4 py-2 bg-neutral-900 text-white rounded-md"
           >
             Add product
           </Link>
-          <form action={logout}>
-            <button type="submit" className="text-sm px-3 py-2 text-neutral-500">
-              Log out
-            </button>
-          </form>
         </div>
       </div>
 

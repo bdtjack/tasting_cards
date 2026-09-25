@@ -15,12 +15,7 @@ export default async function FlightsPage() {
 
   return (
     <main className="max-w-3xl mx-auto p-8">
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-xl font-medium">Flights</h1>
-        <Link href="/dashboard" className="text-sm text-neutral-500">
-          Back to dashboard
-        </Link>
-      </div>
+      <h1 className="text-xl font-medium mb-1">Flights</h1>
       <p className="text-sm text-neutral-500 mb-6">
         A tasting selection with its own QR code. Pick the products yourself,
         or let guests build their own.

@@ -34,6 +34,7 @@ export default async function NewFlightPage({
 
       <div className="flex gap-1 p-1 mb-6 bg-neutral-200/60 rounded-md text-sm">
         <Link
+          replace
           href="/dashboard/flights/new"
           className={`flex-1 text-center py-1.5 rounded ${
             !isBuildYourOwn ? "bg-white shadow-sm font-medium" : "text-neutral-500"
@@ -42,6 +43,7 @@ export default async function NewFlightPage({
           Preset
         </Link>
         <Link
+          replace
           href="/dashboard/flights/new?type=build-your-own"
           className={`flex-1 text-center py-1.5 rounded ${
             isBuildYourOwn ? "bg-white shadow-sm font-medium" : "text-neutral-500"
@@ -144,12 +146,20 @@ export default async function NewFlightPage({
           </div>
         )}
 
-        <button
-          type="submit"
-          className="w-full px-4 py-2 bg-neutral-900 text-white rounded-md text-sm"
-        >
-          Create flight
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard/flights"
+            className="px-4 py-2 border border-neutral-300 rounded-md text-sm text-center text-neutral-600"
+          >
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded-md text-sm"
+          >
+            Create flight
+          </button>
+        </div>
       </form>
     </main>
   );

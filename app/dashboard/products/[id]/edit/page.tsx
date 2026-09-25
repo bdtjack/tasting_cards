@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getPriceLabels } from "@/lib/fields";
@@ -97,9 +98,17 @@ export default async function EditProductPage({
 
         </fieldset>
 
-        <button type="submit" className="w-full px-4 py-2 bg-neutral-900 text-white rounded-md text-sm">
-          Save changes
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/dashboard"
+            className="px-4 py-2 border border-neutral-300 rounded-md text-sm text-center text-neutral-600"
+          >
+            Cancel
+          </Link>
+          <button type="submit" className="flex-1 px-4 py-2 bg-neutral-900 text-white rounded-md text-sm">
+            Save changes
+          </button>
+        </div>
       </form>
 
       <div className="border-t border-neutral-200 mt-6 pt-6">

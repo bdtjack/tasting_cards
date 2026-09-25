@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/auth";
 import ThemeForm from "./theme-form";
@@ -22,12 +21,7 @@ export default async function SettingsPage({
 
   return (
     <main className="max-w-3xl mx-auto p-8">
-      <div className="flex items-center justify-between mb-1">
-        <h1 className="text-xl font-medium">Business profile and theme</h1>
-        <Link href="/dashboard" className="text-sm text-neutral-500">
-          Back to dashboard
-        </Link>
-      </div>
+      <h1 className="text-xl font-medium mb-1">Business profile and theme</h1>
       <p className="text-sm text-neutral-500 mb-6">
         This applies to every guest-facing card you publish.
       </p>

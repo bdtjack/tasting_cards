@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getPriceLabels } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
@@ -77,6 +78,12 @@ export default async function NewProductPage() {
         </fieldset>
 
         <div className="flex gap-2 pt-2">
+          <Link
+            href="/dashboard"
+            className="px-4 py-2 border border-neutral-300 rounded-md text-sm text-center text-neutral-600"
+          >
+            Cancel
+          </Link>
           <button
             type="submit"
             name="intent"
