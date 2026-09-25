@@ -51,7 +51,9 @@ export default async function Image({ params }: { params: Promise<Params> }) {
               {flight.name}
             </span>
             <span style={{ color: business.accentColor, fontSize: 28, marginTop: 16 }}>
-              {flight._count.items} tasting{flight._count.items === 1 ? "" : "s"}
+              {flight.kind === "BUILD_YOUR_OWN"
+                ? `Build your own · ${flight.selectionCount ?? 4} selections`
+                : `${flight._count.items} tasting${flight._count.items === 1 ? "" : "s"}`}
             </span>
             <div
               style={{

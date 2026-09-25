@@ -84,9 +84,21 @@ export default async function MenuPage({
                   className="block rounded-md px-4 py-2.5"
                   style={{ backgroundColor: `${business.accentColor}15` }}
                 >
-                  <span className="text-base font-medium" style={{ color: "#F5F1E8" }}>
-                    {flight.name}
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="text-base font-medium" style={{ color: "#F5F1E8" }}>
+                      {flight.name}
+                    </span>
+                    {flight.price && (
+                      <span className="font-serif text-sm text-white flex-shrink-0">
+                        {flight.price}
+                      </span>
+                    )}
                   </span>
+                  {flight.kind === "BUILD_YOUR_OWN" && (
+                    <span className="block text-xs tracking-wider uppercase mt-1" style={{ color: business.accentColor }}>
+                      Build your own · pick {flight.selectionCount ?? 4}
+                    </span>
+                  )}
                   {flight.description && (
                     <span className="block text-sm mt-1" style={{ color: `${business.accentColor}CC` }}>
                       {flight.description}

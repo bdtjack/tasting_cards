@@ -9,15 +9,22 @@ import { toPng } from "html-to-image";
  * falling back to sharing the link, then to copying the link) for any
  * card-shaped element. Used by both the product guest card and the flight
  * card — keeping this in one place means a fix here fixes both.
+ *
+ * `imageOnly` is for cards that have no page of their own to link back to
+ * (a guest's build-your-own flight is never stored, so its URL would just
+ * open an empty builder). In that mode Share only ever sends the image,
+ * and falls back to downloading it rather than to sharing a link.
  */
 export function useCardShare({
   fileName,
   title,
   text,
+  imageOnly = false,
 }: {
   fileName: string;
   title: string;
   text: string;
+  imageOnly?: boolean;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
@@ -96,7 +103,11 @@ export function useCardShare({
       }
       if (file && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], title, text: `${text} ${url}` });
+          await navigator.share({
+            files: [file],
+            title,
+            text: imageOnly ? text : `${text} ${url}`,
+          });
           return;
         } catch (err) {
           // Guest closed the share sheet: done, nothing to report.
@@ -104,6 +115,13 @@ export function useCardShare({
           // Anything else (e.g. the phone refused the image): try the link.
         }
       }
+    }
+
+    // Image-only cards have no link worth sharing, so save the picture
+    // instead — the guest can post it from their photos.
+    if (imageOnly) {
+      await handleSaveCard();
+      return;
     }
 
     // 2. Share sheet without image support: share the link. The link

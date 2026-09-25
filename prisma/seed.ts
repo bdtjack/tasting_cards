@@ -223,6 +223,7 @@ async function main() {
       slug: "reserve-flight",
       name: "Reserve Flight",
       description: "Our two boldest reds, poured together.",
+      price: "$18.00",
     },
   });
 
@@ -235,7 +236,25 @@ async function main() {
     ],
   });
 
-  console.log("Seeded Hidden Hills Farm and Vineyard + 10 products + Reserve Flight");
+  // Guests pick their own 4 pours from every published wine at scan time,
+  // so there are no flight items to seed for this one.
+  await prisma.flight.upsert({
+    where: { businessId_slug: { businessId: hiddenHills.id, slug: "build-your-own-flight" } },
+    update: {},
+    create: {
+      businessId: hiddenHills.id,
+      slug: "build-your-own-flight",
+      name: "Build Your Own Flight",
+      description: "Pick any four pours from our list.",
+      kind: "BUILD_YOUR_OWN",
+      selectionCount: 4,
+      price: "$20.00",
+    },
+  });
+
+  console.log(
+    "Seeded Hidden Hills Farm and Vineyard + 10 products + Reserve Flight + Build Your Own Flight"
+  );
   console.log(`Log in at /login with: owner@hiddenhills.example / ${SEED_PASSWORD}`);
 }
 

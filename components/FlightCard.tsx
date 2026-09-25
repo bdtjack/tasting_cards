@@ -22,6 +22,7 @@ type FlightProduct = {
 type Flight = {
   name: string;
   description: string | null;
+  price: string | null;
   items: FlightProduct[];
 };
 
@@ -113,6 +114,18 @@ export default function FlightCard({ business, flight }: { business: Business; f
             </div>
           )}
         </div>
+
+        {flight.price && (
+          <div
+            className="mx-6 mt-2 pt-3 border-t flex items-baseline gap-2"
+            style={{ borderColor: `${business.accentColor}30` }}
+          >
+            <span className="text-base" style={{ color: business.accentColor }}>
+              Flight
+            </span>
+            <span className="font-serif text-base text-white">{flight.price}</span>
+          </div>
+        )}
 
         {/* data-no-snapshot: left out of the saved/shared image — buttons in a picture are just noise. */}
         <div className="px-6 pb-2.5 pt-3" data-no-snapshot>

@@ -3,6 +3,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
+import { readFlightPrice, readSelectionCount } from "@/lib/flightForm";
 
 // Same tenant-isolation pattern as products: loads a flight only if it
 // belongs to the current logged-in business.
@@ -19,12 +20,24 @@ async function getOwnedFlight(id: string) {
 
 export async function updateFlight(formData: FormData) {
   const id = String(formData.get("id"));
-  await getOwnedFlight(id); // ownership check
+  const flight = await getOwnedFlight(id); // ownership check
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) throw new Error("Flight name is required");
 
   const description = String(formData.get("description") ?? "").trim() || null;
+  const price = readFlightPrice(formData);
+
+  // Build-your-own flights have no product list to replace — just the
+  // number of picks guests make.
+  if (flight.kind === "BUILD_YOUR_OWN") {
+    await prisma.flight.update({
+      where: { id },
+      data: { name, description, price, selectionCount: readSelectionCount(formData) },
+    });
+    redirect("/dashboard/flights");
+  }
+
   const productIds = formData.getAll("productIds").map(String);
 
   // Simplest correct way to apply a new product selection: replace every
@@ -37,6 +50,7 @@ export async function updateFlight(formData: FormData) {
       data: {
         name,
         description,
+        price,
         items: {
           create: productIds.map((productId, index) => ({
             productId,

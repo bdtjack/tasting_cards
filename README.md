@@ -41,6 +41,14 @@ This is a working scaffold of the core loop:
   its own guest-facing page and QR code, separate from both the full menu
   and any single product. `flights` is a reserved product slug so it can
   never collide with the `/[businessSlug]/flights/...` route.
+- **Build-your-own flights** (`/dashboard/flights` → "Create
+  build-your-own flight") — the business sets a name, a flat price, and how
+  many selections (2–12). Guests scan, pick "First Selection", "Second
+  Selection", … from every published product (repeats allowed), and get a
+  finished flight card they can save or share as an image. The line "Look at
+  the flight I just built at [business name]" is part of the image. Guest
+  picks are never stored — only a count of how many times each flight was
+  built, shown in the dashboard.
 - **Sharing** — on phones, the guest card's and flight card's Share
   buttons send the card itself as an image (falls back to copying the
   link on desktop). The shared logic lives in `lib/useCardShare.ts` so
@@ -81,7 +89,7 @@ Then set up the database:
 
 ```bash
 npm run db:push    # creates all tables from the schema above
-npm run db:seed    # adds Hidden Hills + 2 products + a sample flight
+npm run db:seed    # adds Hidden Hills + 10 wines + a preset flight + a build-your-own flight
 ```
 
 Run it:
@@ -116,6 +124,7 @@ deletes the row and clears the cookie.
 - Full menu: http://localhost:3000/hidden-hills
 - Guest card: http://localhost:3000/hidden-hills/pinto-2022
 - Flight page: http://localhost:3000/hidden-hills/flights/reserve-flight
+- Build-your-own flight: http://localhost:3000/hidden-hills/flights/build-your-own-flight
 - QR downloads: `/api/qr/hidden-hills/pinto-2022`,
   `/api/qr/menu/hidden-hills`, `/api/qr/flight/hidden-hills/reserve-flight`
 
