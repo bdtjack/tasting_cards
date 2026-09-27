@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { updateBusinessTheme } from "./actions";
+import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
 
 const CATEGORIES = [
   { value: "WINERY", label: "Winery" },
@@ -20,6 +21,7 @@ export default function ThemeForm({
     primaryColor: string;
     accentColor: string;
     mailingListLink: string | null;
+    sharePhrase: string | null;
   };
 }) {
   const [name, setName] = useState(business.name);
@@ -28,6 +30,7 @@ export default function ThemeForm({
   const [primaryColor, setPrimaryColor] = useState(business.primaryColor);
   const [accentColor, setAccentColor] = useState(business.accentColor);
   const [mailingListLink, setMailingListLink] = useState(business.mailingListLink ?? "");
+  const [sharePhrase, setSharePhrase] = useState(business.sharePhrase ?? "");
 
   const initials = name.trim().slice(0, 2).toUpperCase() || "??";
 
@@ -143,6 +146,35 @@ export default function ThemeForm({
           </label>
         </div>
 
+        <div className="border-t border-neutral-200 pt-4">
+          <label className="block">
+            <span className="flex items-baseline justify-between mb-1">
+              <span className="text-sm text-neutral-600">Share phrase (optional)</span>
+              <span className="text-xs text-neutral-400">
+                {sharePhrase.length}/{MAX_SHARE_PHRASE_LENGTH}
+              </span>
+            </span>
+            <textarea
+              name="sharePhrase"
+              rows={2}
+              maxLength={MAX_SHARE_PHRASE_LENGTH}
+              value={sharePhrase}
+              onChange={(e) => setSharePhrase(e.target.value)}
+              placeholder="Check out this pour I just got!"
+              className="input"
+            />
+            <span className="block text-xs text-neutral-500 mt-1">
+              Added to the saved image and share text on every product and
+              flight card, followed automatically by the product/flight name
+              and your business name — e.g. &quot;Check out this pour I just
+              got! Pinto at {name || "Your business name"}&quot;. Leave blank
+              to skip this. Build-your-own flights don&apos;t use this, since
+              a guest&apos;s specific picks aren&apos;t saved anywhere to
+              caption.
+            </span>
+          </label>
+        </div>
+
         <button
           type="submit"
           className="w-full px-4 py-2 bg-neutral-900 text-white rounded-md text-sm"
@@ -202,6 +234,17 @@ export default function ThemeForm({
                 This is how tasting notes will look
               </p>
             </div>
+
+            {sharePhrase.trim() && (
+              <div className="px-4 pb-4">
+                <p
+                  className="font-serif italic text-sm text-center"
+                  style={{ color: `${accentColor}CC` }}
+                >
+                  {sharePhrase.trim()} Sample wine at {name || "Your business name"}
+                </p>
+              </div>
+            )}
           </div>
         </div>
         <p className="text-xs text-neutral-400 mt-2">Updates as you edit the fields.</p>

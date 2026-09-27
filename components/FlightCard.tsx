@@ -1,6 +1,7 @@
 "use client";
 
 import { useCardShare } from "@/lib/useCardShare";
+import { buildShareCaption } from "@/lib/shareCaption";
 
 type Business = {
   slug: string;
@@ -9,6 +10,7 @@ type Business = {
   primaryColor: string;
   accentColor: string;
   mailingListLink: string | null;
+  sharePhrase: string | null;
 };
 
 type FlightProduct = {
@@ -27,12 +29,18 @@ type Flight = {
 };
 
 export default function FlightCard({ business, flight }: { business: Business; flight: Flight }) {
+  const shareCaption = buildShareCaption({
+    sharePhrase: business.sharePhrase,
+    itemName: flight.name,
+    businessName: business.name,
+  });
+
   const { cardRef, saving, copied, handleSaveCard, handleShare } = useCardShare({
     fileName: `${business.name.replace(/\s+/g, "-").toLowerCase()}-${flight.name
       .replace(/\s+/g, "-")
       .toLowerCase()}.png`,
     title: `${flight.name} — ${business.name}`,
-    text: `${flight.name} from ${business.name}`,
+    text: shareCaption ?? `${flight.name} from ${business.name}`,
   });
 
   return (
@@ -124,6 +132,17 @@ export default function FlightCard({ business, flight }: { business: Business; f
               Flight
             </span>
             <span className="font-serif text-base text-white">{flight.price}</span>
+          </div>
+        )}
+
+        {shareCaption && (
+          <div className="px-6 pt-4">
+            <p
+              className="font-serif italic text-sm text-center"
+              style={{ color: `${business.accentColor}CC` }}
+            >
+              {shareCaption}
+            </p>
           </div>
         )}
 

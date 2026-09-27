@@ -1,11 +1,18 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 
 const prisma = new PrismaClient();
 
-// Change this after your first login — it's only here so the seeded
-// account has something to log in with on day one.
-const SEED_PASSWORD = "changeme123";
+// Only applies the first time this account is created (the upsert below
+// uses an empty `update: {}`), so re-running the seed later never resets a
+// password you've since changed in the dashboard.
+//
+// No hardcoded default on purpose — a well-known password in a public repo
+// is a real credential once something is actually deployed. Set SEED_PASSWORD
+// yourself to choose it, or leave it unset and a random one is generated and
+// printed below for you to log in with once.
+const SEED_PASSWORD = process.env.SEED_PASSWORD ?? randomBytes(9).toString("base64url");
 
 async function main() {
   const passwordHash = await bcrypt.hash(SEED_PASSWORD, 10);
@@ -22,6 +29,7 @@ async function main() {
       primaryColor: "#0D0D0D",
       accentColor: "#C9A24B",
       mailingListLink: "https://example.com/hidden-hills-newsletter",
+      sharePhrase: "Check out this pour I just got!",
     },
   });
 

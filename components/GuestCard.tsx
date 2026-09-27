@@ -1,6 +1,7 @@
 "use client";
 
 import { useCardShare } from "@/lib/useCardShare";
+import { buildShareCaption } from "@/lib/shareCaption";
 
 type Business = {
   name: string;
@@ -8,6 +9,7 @@ type Business = {
   primaryColor: string;
   accentColor: string;
   mailingListLink: string | null;
+  sharePhrase: string | null;
 };
 
 type Product = {
@@ -32,10 +34,16 @@ export default function GuestCard({
   product: Product;
   isArchived: boolean;
 }) {
+  const shareCaption = buildShareCaption({
+    sharePhrase: business.sharePhrase,
+    itemName: product.name,
+    businessName: business.name,
+  });
+
   const { cardRef, saving, copied, handleSaveCard, handleShare } = useCardShare({
     fileName: `${business.name.replace(/\s+/g, "-").toLowerCase()}-${product.slug}.png`,
     title: `${product.name} — ${business.name}`,
-    text: `${product.name} from ${business.name}`,
+    text: shareCaption ?? `${product.name} from ${business.name}`,
   });
 
   const priceEntries = Object.entries(product.prices).filter(([, value]) => value);
@@ -95,6 +103,17 @@ export default function GuestCard({
               {product.palate && <NoteRow label="Palate" value={product.palate} accentColor={business.accentColor} />}
               {product.finish && <NoteRow label="Finish" value={product.finish} accentColor={business.accentColor} />}
             </div>
+
+            {shareCaption && (
+              <div className="px-6 pt-4">
+                <p
+                  className="font-serif italic text-sm text-center"
+                  style={{ color: `${business.accentColor}CC` }}
+                >
+                  {shareCaption}
+                </p>
+              </div>
+            )}
 
             <div
               className="px-6 pt-5 pb-2.5 flex items-center justify-between border-t"

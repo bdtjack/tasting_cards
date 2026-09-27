@@ -51,6 +51,15 @@ model Business {
   // mailing list to point guests to.
   mailingListLink String?
 
+  // Optional opener for the caption baked into a product/flight card's
+  // saved image and passed to the share sheet, e.g. "Check out this pour
+  // I just got!" — the product/flight name and business name are appended
+  // automatically (see lib/shareCaption.ts), so this is just the personal
+  // part. Capped at MAX_SHARE_PHRASE_LENGTH in the settings form and again
+  // in the server action. Not used by build-your-own flights, which have
+  // no stored page to share a caption for.
+  sharePhrase String?
+
   products Product[]
   sessions Session[]
   flights  Flight[]

@@ -75,6 +75,7 @@ export default async function GuestCardPage({
         primaryColor: business.primaryColor,
         accentColor: business.accentColor,
         mailingListLink: business.mailingListLink,
+        sharePhrase: business.sharePhrase,
       }}
       product={{
         slug: product.slug,

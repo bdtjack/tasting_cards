@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness, verifyPassword, hashPassword } from "@/lib/auth";
+import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
 
 export async function updateBusinessTheme(formData: FormData) {
   const business = await getCurrentBusiness();
@@ -20,6 +21,9 @@ export async function updateBusinessTheme(formData: FormData) {
       primaryColor: String(formData.get("primaryColor") ?? business.primaryColor),
       accentColor: String(formData.get("accentColor") ?? business.accentColor),
       mailingListLink: String(formData.get("mailingListLink") ?? "").trim() || null,
+      sharePhrase:
+        String(formData.get("sharePhrase") ?? "").trim().slice(0, MAX_SHARE_PHRASE_LENGTH) ||
+        null,
     },
   });
 

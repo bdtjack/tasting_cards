@@ -49,6 +49,7 @@ export default async function SettingsPage({
           primaryColor: business.primaryColor,
           accentColor: business.accentColor,
           mailingListLink: business.mailingListLink,
+          sharePhrase: business.sharePhrase,
         }}
       />
 

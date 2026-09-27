@@ -53,6 +53,7 @@ export default async function FlightPage({
     primaryColor: business.primaryColor,
     accentColor: business.accentColor,
     mailingListLink: business.mailingListLink,
+    sharePhrase: business.sharePhrase,
   };
 
   if (flight.kind === "BUILD_YOUR_OWN") {

@@ -57,6 +57,15 @@ This is a working scaffold of the core loop:
   notes, prices), using the Crimson Text font in `assets/fonts` (SIL Open
   Font License). A broken logo URL falls back to a plain thumbnail
   instead of breaking the preview.
+- **Share phrase** (`/dashboard/settings` → "Share phrase") — an optional,
+  150-character opener a business sets once, e.g. "Check out this pour I
+  just got!" It's assembled into a caption (`lib/shareCaption.ts`) with
+  the product/flight name and business name appended automatically, baked
+  directly into the card's saved/shared image *and* passed as the share
+  text — so it's visible even on destinations (like Instagram Stories)
+  that drop share text and keep only the image. Leaving it blank keeps
+  the card exactly as before. Not used by build-your-own flights, since a
+  guest's specific picks are never stored anywhere to caption.
 - **Seed data** — Hidden Hills Farm and Vineyard, two products (Pinto 2022
   and Reserve Estate Red), and a sample "Reserve Flight" containing both.
 
@@ -110,12 +119,16 @@ account:
 
 - **URL:** http://localhost:3000/login
 - **Email:** `owner@hiddenhills.example`
-- **Password:** `changeme123`
+- **Password:** printed to your terminal when you run `npm run db:seed`
+  against a fresh database — it's randomly generated each time rather than
+  a fixed value in the repo. Set a `SEED_PASSWORD` environment variable
+  before seeding if you'd rather choose it yourself. Either way, this only
+  applies the first time the account is created; re-running the seed later
+  doesn't reset a password you've since changed.
 
-Change that password before this goes anywhere near real use, especially
-once deployed — there's a **Password** section at the bottom of
-`/dashboard/settings` for this now (current password + new password +
-confirmation, at least 8 characters).
+Change that password once you've logged in — there's a **Password**
+section at the bottom of `/dashboard/settings` for this (current password
++ new password + confirmation, at least 8 characters).
 
 Sessions last 30 days and are stored in the `Session` table — logging out
 deletes the row and clears the cookie.
