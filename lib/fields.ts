@@ -1,6 +1,6 @@
 import type { BusinessCategory, ProductType } from "./types";
 
-export const PRODUCT_TYPES: ProductType[] = ["WINE", "BEER", "SPIRIT"];
+export const PRODUCT_TYPES: ProductType[] = ["WINE", "BEER", "SPIRIT", "COCKTAIL"];
 
 export function isProductType(value: unknown): value is ProductType {
   return typeof value === "string" && (PRODUCT_TYPES as string[]).includes(value);
@@ -10,18 +10,14 @@ export const PRODUCT_TYPE_LABELS: Record<ProductType, string> = {
   WINE: "Wine",
   BEER: "Beer",
   SPIRIT: "Spirit",
+  COCKTAIL: "Cocktail",
 };
 
 /**
- * Which kind of product a new item is. A single-category business always
- * adds its own kind; a MIXED business chooses per product (the chooser
- * on the new-product page), so `requested` is only honored for MIXED and
- * returns null if it's missing or invalid.
+ * The product type a single-category business mainly makes, or null for a
+ * MIXED business (which has no single primary type).
  */
-export function resolveProductType(
-  category: BusinessCategory,
-  requested?: unknown
-): ProductType | null {
+export function getPrimaryProductType(category: BusinessCategory): ProductType | null {
   switch (category) {
     case "WINERY":
       return "WINE";
@@ -29,10 +25,33 @@ export function resolveProductType(
       return "BEER";
     case "DISTILLERY":
       return "SPIRIT";
-    case "MIXED":
     default:
-      return isProductType(requested) ? requested : null;
+      return null;
   }
+}
+
+/**
+ * The types a business can add, in the order shown on the chooser. Every
+ * business can add cocktails on top of what it makes; MIXED businesses
+ * can add any kind.
+ */
+export function getAllowedProductTypes(category: BusinessCategory): ProductType[] {
+  const primary = getPrimaryProductType(category);
+  return primary ? [primary, "COCKTAIL"] : PRODUCT_TYPES;
+}
+
+/**
+ * Validates the type a new product was requested as against what this
+ * business is allowed to add. Returns null if it's missing or not allowed,
+ * which sends the user to the chooser.
+ */
+export function resolveProductType(
+  category: BusinessCategory,
+  requested?: unknown
+): ProductType | null {
+  return isProductType(requested) && getAllowedProductTypes(category).includes(requested)
+    ? requested
+    : null;
 }
 
 /**
@@ -59,19 +78,7 @@ export function getPriceLabels(type: ProductType): string[] {
       return ["Oz", "Bottle"];
     case "BEER":
       return ["Taste", "Pour", "Pack"];
-  }
-}
-
-/** Placeholder text for the Description field, by product type. */
-export function getDescriptionHint(type: ProductType | null): string {
-  switch (type) {
-    case "SPIRIT":
-      return "Mash bill, e.g. 75% corn, 15% rye, 10% malted barley";
-    case "WINE":
-      return "Grape breakdown, e.g. 60% Cabernet Sauvignon, 40% Merlot";
-    case "BEER":
-      return "Hops and malt breakdown, e.g. Citra, Mosaic; 2-row, Munich";
-    default:
-      return "Mash bill, grape breakdown, hops breakdown, etc.";
+    case "COCKTAIL":
+      return ["Price"];
   }
 }

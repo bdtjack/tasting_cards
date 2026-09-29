@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getDescriptionHint, getPriceLabels, isProductType, resolveProductType } from "@/lib/fields";
+import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
 import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
 import type { BusinessCategory } from "@/lib/types";
@@ -32,7 +32,7 @@ export default async function EditProductPage({
     getPriceLabels(
       isProductType(product.productType)
         ? product.productType
-        : resolveProductType(business.category as BusinessCategory) ?? "SPIRIT"
+        : getPrimaryProductType(business.category as BusinessCategory) ?? "SPIRIT"
     );
   const prices = parseJsonField<Record<string, string>>(product.prices, {});
 
@@ -74,7 +74,6 @@ export default async function EditProductPage({
             rows={3}
             defaultValue={product.description ?? ""}
             className="input"
-            placeholder={getDescriptionHint(isProductType(product.productType) ? product.productType : null)}
           />
         </Field>
 
@@ -104,7 +103,6 @@ export default async function EditProductPage({
                   name={`price_${label}`}
                   defaultValue={prices[label] ?? ""}
                   className="input"
-                  placeholder="$0.00"
                 />
               </Field>
             ))}

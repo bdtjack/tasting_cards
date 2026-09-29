@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  PRODUCT_TYPES,
   PRODUCT_TYPE_LABELS,
-  getDescriptionHint,
+  getAllowedProductTypes,
   getPriceLabels,
   resolveProductType,
 } from "@/lib/fields";
@@ -15,6 +14,7 @@ const TYPE_BLURBS = {
   WINE: "Priced by the glass and bottle",
   BEER: "Priced by taste, pour and pack",
   SPIRIT: "Priced by the ounce and bottle",
+  COCKTAIL: "Mixed drinks, with a single price",
 } as const;
 
 export default async function NewProductPage({
@@ -28,15 +28,16 @@ export default async function NewProductPage({
   const { type: requestedType } = await searchParams;
   const productType = resolveProductType(business.category as BusinessCategory, requestedType);
 
-  // Mixed businesses pour more than one kind of drink, so ask what they're
-  // adding before showing the form — the price fields depend on the answer.
+  // Every business can add more than one kind of drink (at least its own
+  // plus cocktails), so ask what they're adding before showing the form —
+  // the price fields depend on the answer.
   if (!productType) {
     return (
       <main className="max-w-lg mx-auto p-8">
         <h1 className="text-lg font-medium mb-1">Add product</h1>
         <p className="text-sm text-neutral-500 mb-6">What are you adding?</p>
         <div className="space-y-3">
-          {PRODUCT_TYPES.map((type) => (
+          {getAllowedProductTypes(business.category as BusinessCategory).map((type) => (
             <Link
               key={type}
               href={`/dashboard/products/new?type=${type}`}
@@ -71,15 +72,15 @@ export default async function NewProductPage({
       <form action={createProduct} className="space-y-4">
         <input type="hidden" name="productType" value={productType} />
         <Field label="Product name">
-          <input name="name" required className="input" placeholder="Pinto" />
+          <input name="name" required className="input" />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Category">
-            <input name="category" className="input" placeholder="Pinot noir" />
+            <input name="category" className="input" />
           </Field>
           <Field label="Subtitle">
-            <input name="subtitle" className="input" placeholder="2022 vintage" />
+            <input name="subtitle" className="input" />
           </Field>
         </div>
 
@@ -90,7 +91,7 @@ export default async function NewProductPage({
           per-product override control would live here.
         */}
         <Field label="Proof / ABV (leave blank if not applicable)">
-          <input name="proofAbv" className="input" placeholder="108 proof · 54% alc/vol" />
+          <input name="proofAbv" className="input" />
         </Field>
 
         <Field label="Description (optional)">
@@ -98,7 +99,6 @@ export default async function NewProductPage({
             name="description"
             rows={3}
             className="input"
-            placeholder={getDescriptionHint(productType)}
           />
         </Field>
 
@@ -123,7 +123,7 @@ export default async function NewProductPage({
           {/*
             Price fields are driven by the product type (wine gets
             Glass/Bottle, spirit gets Oz/Bottle, beer gets
-            Taste/Pour/Pack — for mixed businesses the owner picks the type first). The label itself is submitted alongside each
+            Taste/Pour/Pack, cocktail gets a single Price — the owner picks the type first). The label itself is submitted alongside each
             value so actions.ts can build the {label: value} map without
             needing to re-derive it — see the hidden input below.
           */}
@@ -131,7 +131,7 @@ export default async function NewProductPage({
           <div className={`grid gap-4 ${priceLabels.length > 1 ? "grid-cols-2" : ""}`}>
             {priceLabels.map((label) => (
               <Field key={label} label={label}>
-                <input name={`price_${label}`} className="input" placeholder="$0.00" />
+                <input name={`price_${label}`} className="input" />
               </Field>
             ))}
           </div>

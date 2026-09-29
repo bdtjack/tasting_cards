@@ -5,7 +5,7 @@
 
 export type BusinessCategory = "WINERY" | "BREWERY" | "DISTILLERY" | "MIXED";
 
-export type ProductType = "WINE" | "BEER" | "SPIRIT";
+export type ProductType = "WINE" | "BEER" | "SPIRIT" | "COCKTAIL";
 
 export type ProductStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 
