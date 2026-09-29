@@ -37,6 +37,7 @@ export async function updateProduct(formData: FormData) {
       category: String(formData.get("category") ?? ""),
       subtitle: String(formData.get("subtitle") ?? "") || null,
       proofAbv: String(formData.get("proofAbv") ?? "") || null,
+      description: String(formData.get("description") ?? "").trim() || null,
       aroma: String(formData.get("aroma") ?? "") || null,
       palate: String(formData.get("palate") ?? "") || null,
       finish: String(formData.get("finish") ?? "") || null,

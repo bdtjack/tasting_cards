@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { defaultShowAbv } from "@/lib/fields";
+import { defaultShowAbv, getPriceLabels, resolveProductType } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
 import { productSlugify } from "@/lib/slug";
 import type { BusinessCategory } from "@/lib/types";
@@ -16,7 +16,15 @@ export async function createProduct(formData: FormData) {
 
   const publish = formData.get("intent") === "publish";
 
-  const priceLabelList: string[] = JSON.parse(String(formData.get("priceLabels") ?? "[]"));
+  const productType = resolveProductType(
+    business.category as BusinessCategory,
+    formData.get("productType")
+  );
+  if (!productType) throw new Error("Product type is required");
+
+  // Derived server-side from the type rather than trusting the submitted
+  // labels, so the form can't be tampered with to save arbitrary labels.
+  const priceLabelList = getPriceLabels(productType);
   const priceValues: Record<string, string> = {};
   for (const label of priceLabelList) {
     const value = String(formData.get(`price_${label}`) ?? "").trim();
@@ -30,9 +38,11 @@ export async function createProduct(formData: FormData) {
       name,
       category: String(formData.get("category") ?? ""),
       subtitle: String(formData.get("subtitle") ?? "") || null,
-      // Locked in now, from the business's category at this moment —
+      productType,
+      description: String(formData.get("description") ?? "").trim() || null,
+      // Locked in now, from the product type at this moment —
       // does not get re-derived later if the business's category changes.
-      showAbv: defaultShowAbv(business.category as BusinessCategory),
+      showAbv: defaultShowAbv(productType),
       proofAbv: String(formData.get("proofAbv") ?? "") || null,
       aroma: String(formData.get("aroma") ?? "") || null,
       palate: String(formData.get("palate") ?? "") || null,

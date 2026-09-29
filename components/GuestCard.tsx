@@ -19,6 +19,7 @@ type Product = {
   subtitle: string | null;
   showAbv: boolean;
   proofAbv: string | null;
+  description: string | null;
   aroma: string | null;
   palate: string | null;
   finish: string | null;
@@ -98,6 +99,9 @@ export default function GuestCard({
             <div className="px-6 pb-2 space-y-5">
               {product.showAbv && product.proofAbv && (
                 <NoteRow label="Proof / ABV" value={product.proofAbv} accentColor={business.accentColor} />
+              )}
+              {product.description && (
+                <NoteRow label="Description" value={product.description} accentColor={business.accentColor} />
               )}
               {product.aroma && <NoteRow label="Aroma" value={product.aroma} accentColor={business.accentColor} />}
               {product.palate && <NoteRow label="Palate" value={product.palate} accentColor={business.accentColor} />}
@@ -216,7 +220,7 @@ function NoteRow({ label, value, accentColor }: { label: string; value: string; 
       <p className="text-sm tracking-wider uppercase mb-1" style={{ color: accentColor }}>
         {label}
       </p>
-      <p className="text-base text-neutral-100">{value}</p>
+      <p className="text-base text-neutral-100 whitespace-pre-line">{value}</p>
     </div>
   );
 }

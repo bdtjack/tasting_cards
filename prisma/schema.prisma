@@ -87,6 +87,16 @@ model Product {
   category String // varietal (wine) or style (beer/spirits)
   subtitle String? // vintage, edition, etc.
 
+  // What kind of drink this is: "WINE" | "BEER" | "SPIRIT" (see ProductType
+  // in lib/types.ts). Snapshotted at creation — for a single-category
+  // business it follows the business, for a MIXED business the owner picks
+  // it per product. Null on products created before this field existed.
+  productType String?
+
+  // Free-form details the business wants to show: mash bill, grape
+  // breakdown, hops/malt bill, etc.
+  description String?
+
   // Locked in at creation time from the business's category — does not
   // change retroactively if the business's category setting changes later.
   showAbv  Boolean @default(false)

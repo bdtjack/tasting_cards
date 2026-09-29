@@ -1,24 +1,75 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getPriceLabels } from "@/lib/fields";
+import {
+  PRODUCT_TYPES,
+  PRODUCT_TYPE_LABELS,
+  getDescriptionHint,
+  getPriceLabels,
+  resolveProductType,
+} from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
 import type { BusinessCategory } from "@/lib/types";
 import { createProduct } from "./actions";
 
-export default async function NewProductPage() {
+const TYPE_BLURBS = {
+  WINE: "Priced by the glass and bottle",
+  BEER: "Priced by taste, pour and pack",
+  SPIRIT: "Priced by the ounce and bottle",
+} as const;
+
+export default async function NewProductPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ type?: string }>;
+}) {
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
-  const priceLabels = getPriceLabels(business.category as BusinessCategory);
+  const { type: requestedType } = await searchParams;
+  const productType = resolveProductType(business.category as BusinessCategory, requestedType);
+
+  // Mixed businesses pour more than one kind of drink, so ask what they're
+  // adding before showing the form — the price fields depend on the answer.
+  if (!productType) {
+    return (
+      <main className="max-w-lg mx-auto p-8">
+        <h1 className="text-lg font-medium mb-1">Add product</h1>
+        <p className="text-sm text-neutral-500 mb-6">What are you adding?</p>
+        <div className="space-y-3">
+          {PRODUCT_TYPES.map((type) => (
+            <Link
+              key={type}
+              href={`/dashboard/products/new?type=${type}`}
+              className="block border border-neutral-300 rounded-md px-4 py-3 hover:border-neutral-900"
+            >
+              <span className="block text-sm font-medium">{PRODUCT_TYPE_LABELS[type]}</span>
+              <span className="block text-xs text-neutral-500">{TYPE_BLURBS[type]}</span>
+            </Link>
+          ))}
+        </div>
+        <Link
+          href="/dashboard"
+          className="inline-block mt-6 text-sm text-neutral-600 underline"
+        >
+          Cancel
+        </Link>
+      </main>
+    );
+  }
+
+  const priceLabels = getPriceLabels(productType);
 
   return (
     <main className="max-w-lg mx-auto p-8">
-      <h1 className="text-lg font-medium mb-1">Add product</h1>
+      <h1 className="text-lg font-medium mb-1">
+        Add {PRODUCT_TYPE_LABELS[productType].toLowerCase()}
+      </h1>
       <p className="text-sm text-neutral-500 mb-6">
         Fields shown to guests on the tasting card.
       </p>
 
       <form action={createProduct} className="space-y-4">
+        <input type="hidden" name="productType" value={productType} />
         <Field label="Product name">
           <input name="name" required className="input" placeholder="Pinto" />
         </Field>
@@ -42,6 +93,15 @@ export default async function NewProductPage() {
           <input name="proofAbv" className="input" placeholder="108 proof · 54% alc/vol" />
         </Field>
 
+        <Field label="Description (optional)">
+          <textarea
+            name="description"
+            rows={3}
+            className="input"
+            placeholder={getDescriptionHint(productType)}
+          />
+        </Field>
+
         <fieldset className="border-t border-neutral-200 pt-4 space-y-3">
           <legend className="text-sm font-medium text-neutral-600 mb-1">
             Tasting notes
@@ -61,9 +121,9 @@ export default async function NewProductPage() {
           <legend className="text-sm font-medium text-neutral-600 mb-1">Optional</legend>
 
           {/*
-            Price fields are driven by the business's category (winery gets
-            Glass/Bottle, distillery gets Oz/Bottle, brewery gets
-            Taste/Pour/Pack). The label itself is submitted alongside each
+            Price fields are driven by the product type (wine gets
+            Glass/Bottle, spirit gets Oz/Bottle, beer gets
+            Taste/Pour/Pack — for mixed businesses the owner picks the type first). The label itself is submitted alongside each
             value so actions.ts can build the {label: value} map without
             needing to re-derive it — see the hidden input below.
           */}

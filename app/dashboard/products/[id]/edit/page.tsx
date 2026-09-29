@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getPriceLabels } from "@/lib/fields";
+import { getDescriptionHint, getPriceLabels, isProductType, resolveProductType } from "@/lib/fields";
 import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
 import type { BusinessCategory } from "@/lib/types";
@@ -29,7 +29,11 @@ export default async function EditProductPage({
   // stored snapshot yet — fall back to deriving it fresh in that case.
   const priceLabels: string[] =
     parseJsonField<string[] | null>(product.priceLabels, null) ??
-    getPriceLabels(business.category as BusinessCategory);
+    getPriceLabels(
+      isProductType(product.productType)
+        ? product.productType
+        : resolveProductType(business.category as BusinessCategory) ?? "SPIRIT"
+    );
   const prices = parseJsonField<Record<string, string>>(product.prices, {});
 
   return (
@@ -62,6 +66,16 @@ export default async function EditProductPage({
 
         <Field label="Proof / ABV (leave blank if not applicable)">
           <input name="proofAbv" defaultValue={product.proofAbv ?? ""} className="input" />
+        </Field>
+
+        <Field label="Description (optional)">
+          <textarea
+            name="description"
+            rows={3}
+            defaultValue={product.description ?? ""}
+            className="input"
+            placeholder={getDescriptionHint(isProductType(product.productType) ? product.productType : null)}
+          />
         </Field>
 
         <fieldset className="border-t border-neutral-200 pt-4 space-y-3">
