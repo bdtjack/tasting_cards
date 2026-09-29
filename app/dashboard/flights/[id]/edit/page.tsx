@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
 import { MAX_SELECTIONS, MIN_SELECTIONS } from "@/lib/types";
 import { updateFlight, deleteFlight } from "./actions";
+import { LIMITS } from "@/lib/validate";
 
 export default async function EditFlightPage({
   params,
@@ -57,7 +58,7 @@ export default async function EditFlightPage({
 
         <label className="block">
           <span className="block text-sm text-neutral-600 mb-1">Flight name</span>
-          <input name="name" required defaultValue={flight.name} className="input" />
+          <input name="name" maxLength={LIMITS.name} required defaultValue={flight.name} className="input" />
         </label>
 
         <label className="block">
@@ -65,7 +66,7 @@ export default async function EditFlightPage({
             Description (optional)
           </span>
           <textarea
-            name="description"
+            name="description" maxLength={LIMITS.flightDescription}
             rows={2}
             defaultValue={flight.description ?? ""}
             className="input"
@@ -94,7 +95,7 @@ export default async function EditFlightPage({
               Flight price (optional)
             </span>
             <input
-              name="price"
+              name="price" maxLength={LIMITS.price}
               defaultValue={flight.price ?? ""}
               className="input"
               placeholder="$0.00"

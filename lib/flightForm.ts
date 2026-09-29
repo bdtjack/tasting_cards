@@ -1,8 +1,9 @@
 import { MAX_SELECTIONS, MIN_SELECTIONS } from "./types";
+import { LIMITS, optionalText } from "./validate";
 
 /** Reads the optional flat price field; blank means "no price shown". */
 export function readFlightPrice(formData: FormData): string | null {
-  return String(formData.get("price") ?? "").trim() || null;
+  return optionalText(formData.get("price"), LIMITS.price);
 }
 
 /**

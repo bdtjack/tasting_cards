@@ -3,6 +3,14 @@ import { getCurrentBusiness } from "@/lib/auth";
 import ThemeForm from "./theme-form";
 import { changePassword } from "./actions";
 
+const SETTINGS_ERROR_MESSAGES: Record<string, string> = {
+  name: "Business name is required.",
+  category: "Pick a category from the list.",
+  color: "Colors must be six-digit hex codes, like #C9A24B.",
+  logoUrl: "Logo URL must be a web link starting with https://.",
+  mailingListLink: "Mailing list link must be a web link starting with https://.",
+};
+
 const PASSWORD_ERROR_MESSAGES: Record<string, string> = {
   current: "That current password is incorrect.",
   short: "New password must be at least 8 characters.",
@@ -12,12 +20,12 @@ const PASSWORD_ERROR_MESSAGES: Record<string, string> = {
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; pwSaved?: string; pwError?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; pwSaved?: string; pwError?: string }>;
 }) {
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
-  const { saved, pwSaved, pwError } = await searchParams;
+  const { saved, error, pwSaved, pwError } = await searchParams;
 
   return (
     <main className="max-w-3xl mx-auto p-8">
@@ -29,6 +37,11 @@ export default async function SettingsPage({
       {saved && (
         <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2 mb-4">
           Saved.
+        </p>
+      )}
+      {error && SETTINGS_ERROR_MESSAGES[error] && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
+          Not saved. {SETTINGS_ERROR_MESSAGES[error]}
         </p>
       )}
 

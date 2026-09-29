@@ -7,6 +7,7 @@ import {
   resolveProductType,
 } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
+import { LIMITS } from "@/lib/validate";
 import type { BusinessCategory } from "@/lib/types";
 import { createProduct } from "./actions";
 
@@ -72,15 +73,15 @@ export default async function NewProductPage({
       <form action={createProduct} className="space-y-4">
         <input type="hidden" name="productType" value={productType} />
         <Field label="Product name">
-          <input name="name" required className="input" />
+          <input name="name" maxLength={LIMITS.name} required className="input" />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Category">
-            <input name="category" className="input" />
+            <input name="category" maxLength={LIMITS.category} className="input" />
           </Field>
           <Field label="Subtitle">
-            <input name="subtitle" className="input" />
+            <input name="subtitle" maxLength={LIMITS.subtitle} className="input" />
           </Field>
         </div>
 
@@ -91,12 +92,12 @@ export default async function NewProductPage({
           per-product override control would live here.
         */}
         <Field label="Proof / ABV (leave blank if not applicable)">
-          <input name="proofAbv" className="input" />
+          <input name="proofAbv" maxLength={LIMITS.proofAbv} className="input" />
         </Field>
 
         <Field label="Description (optional)">
           <textarea
-            name="description"
+            name="description" maxLength={LIMITS.description}
             rows={3}
             className="input"
           />
@@ -107,13 +108,13 @@ export default async function NewProductPage({
             Tasting notes
           </legend>
           <Field label="Aroma">
-            <textarea name="aroma" rows={2} className="input" />
+            <textarea name="aroma" maxLength={LIMITS.note} rows={2} className="input" />
           </Field>
           <Field label="Palate">
-            <textarea name="palate" rows={2} className="input" />
+            <textarea name="palate" maxLength={LIMITS.note} rows={2} className="input" />
           </Field>
           <Field label="Finish">
-            <textarea name="finish" rows={2} className="input" />
+            <textarea name="finish" maxLength={LIMITS.note} rows={2} className="input" />
           </Field>
         </fieldset>
 
@@ -131,7 +132,8 @@ export default async function NewProductPage({
           <div className={`grid gap-4 ${priceLabels.length > 1 ? "grid-cols-2" : ""}`}>
             {priceLabels.map((label) => (
               <Field key={label} label={label}>
-                <input name={`price_${label}`} className="input" />
+                <input name={`price_${label}`}
+                  maxLength={LIMITS.price} className="input" />
               </Field>
             ))}
           </div>

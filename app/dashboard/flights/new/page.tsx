@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
 import { MAX_SELECTIONS, MIN_SELECTIONS } from "@/lib/types";
 import { createFlight, createBuildYourOwnFlight } from "./actions";
+import { LIMITS } from "@/lib/validate";
 
 export default async function NewFlightPage({
   searchParams,
@@ -60,7 +61,7 @@ export default async function NewFlightPage({
         <label className="block">
           <span className="block text-sm text-neutral-600 mb-1">Flight name</span>
           <input
-            name="name"
+            name="name" maxLength={LIMITS.name}
             required
             className="input"
             placeholder={isBuildYourOwn ? "Build Your Own Flight" : "Reserve Flight"}
@@ -72,7 +73,7 @@ export default async function NewFlightPage({
             Description (optional)
           </span>
           <textarea
-            name="description"
+            name="description" maxLength={LIMITS.flightDescription}
             rows={2}
             className="input"
             placeholder={
@@ -104,7 +105,7 @@ export default async function NewFlightPage({
             <span className="block text-sm text-neutral-600 mb-1">
               Flight price (optional)
             </span>
-            <input name="price" className="input" placeholder="$0.00" />
+            <input name="price" maxLength={LIMITS.price} className="input" placeholder="$0.00" />
           </label>
         </div>
 

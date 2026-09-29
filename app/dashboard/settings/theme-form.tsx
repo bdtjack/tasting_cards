@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { updateBusinessTheme } from "./actions";
 import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
+import { LIMITS } from "@/lib/validate";
 
 const CATEGORIES = [
   { value: "WINERY", label: "Winery" },
@@ -42,6 +43,7 @@ export default function ThemeForm({
           <input
             name="name"
             required
+            maxLength={LIMITS.name}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className="input"
@@ -77,6 +79,8 @@ export default function ThemeForm({
             </span>
             <input
               name="logoUrl"
+              type="url"
+              maxLength={LIMITS.url}
               value={logoUrl}
               onChange={(e) => setLogoUrl(e.target.value)}
               placeholder="https://"
@@ -101,6 +105,8 @@ export default function ThemeForm({
                 />
                 <input
                   name="primaryColor"
+                  maxLength={7}
+                  pattern="#[0-9a-fA-F]{6}"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
                   className="input"
@@ -118,6 +124,8 @@ export default function ThemeForm({
                 />
                 <input
                   name="accentColor"
+                  maxLength={7}
+                  pattern="#[0-9a-fA-F]{6}"
                   value={accentColor}
                   onChange={(e) => setAccentColor(e.target.value)}
                   className="input"
@@ -134,6 +142,8 @@ export default function ThemeForm({
             </span>
             <input
               name="mailingListLink"
+              type="url"
+              maxLength={LIMITS.url}
               value={mailingListLink}
               onChange={(e) => setMailingListLink(e.target.value)}
               placeholder="https://"

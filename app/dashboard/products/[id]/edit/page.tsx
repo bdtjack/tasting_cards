@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
 import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
+import { LIMITS } from "@/lib/validate";
 import type { BusinessCategory } from "@/lib/types";
 import { updateProduct, setProductStatus } from "./actions";
 
@@ -52,25 +53,25 @@ export default async function EditProductPage({
         <input type="hidden" name="id" value={product.id} />
 
         <Field label="Product name">
-          <input name="name" required defaultValue={product.name} className="input" />
+          <input name="name" maxLength={LIMITS.name} required defaultValue={product.name} className="input" />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Category">
-            <input name="category" defaultValue={product.category} className="input" />
+            <input name="category" maxLength={LIMITS.category} defaultValue={product.category} className="input" />
           </Field>
           <Field label="Subtitle">
-            <input name="subtitle" defaultValue={product.subtitle ?? ""} className="input" />
+            <input name="subtitle" maxLength={LIMITS.subtitle} defaultValue={product.subtitle ?? ""} className="input" />
           </Field>
         </div>
 
         <Field label="Proof / ABV (leave blank if not applicable)">
-          <input name="proofAbv" defaultValue={product.proofAbv ?? ""} className="input" />
+          <input name="proofAbv" maxLength={LIMITS.proofAbv} defaultValue={product.proofAbv ?? ""} className="input" />
         </Field>
 
         <Field label="Description (optional)">
           <textarea
-            name="description"
+            name="description" maxLength={LIMITS.description}
             rows={3}
             defaultValue={product.description ?? ""}
             className="input"
@@ -82,13 +83,13 @@ export default async function EditProductPage({
             Tasting notes
           </legend>
           <Field label="Aroma">
-            <textarea name="aroma" rows={2} defaultValue={product.aroma ?? ""} className="input" />
+            <textarea name="aroma" maxLength={LIMITS.note} rows={2} defaultValue={product.aroma ?? ""} className="input" />
           </Field>
           <Field label="Palate">
-            <textarea name="palate" rows={2} defaultValue={product.palate ?? ""} className="input" />
+            <textarea name="palate" maxLength={LIMITS.note} rows={2} defaultValue={product.palate ?? ""} className="input" />
           </Field>
           <Field label="Finish">
-            <textarea name="finish" rows={2} defaultValue={product.finish ?? ""} className="input" />
+            <textarea name="finish" maxLength={LIMITS.note} rows={2} defaultValue={product.finish ?? ""} className="input" />
           </Field>
         </fieldset>
 
@@ -101,6 +102,7 @@ export default async function EditProductPage({
               <Field key={label} label={label}>
                 <input
                   name={`price_${label}`}
+                  maxLength={LIMITS.price}
                   defaultValue={prices[label] ?? ""}
                   className="input"
                 />

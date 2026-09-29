@@ -4,26 +4,40 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness, verifyPassword, hashPassword } from "@/lib/auth";
 import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
+import { LIMITS, cleanText, isBusinessCategory, isHexColor, optionalText, optionalUrl } from "@/lib/validate";
 
 export async function updateBusinessTheme(formData: FormData) {
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) throw new Error("Business name is required");
+  const name = cleanText(formData.get("name"), LIMITS.name);
+  if (!name) redirect("/dashboard/settings?error=name");
+
+  const category = String(formData.get("category") ?? business.category);
+  if (!isBusinessCategory(category)) redirect("/dashboard/settings?error=category");
+
+  const primaryColor = cleanText(formData.get("primaryColor"), 7) || business.primaryColor;
+  const accentColor = cleanText(formData.get("accentColor"), 7) || business.accentColor;
+  if (!isHexColor(primaryColor) || !isHexColor(accentColor)) {
+    redirect("/dashboard/settings?error=color");
+  }
+
+  const logoUrl = optionalUrl(formData.get("logoUrl"));
+  if (logoUrl === false) redirect("/dashboard/settings?error=logoUrl");
+
+  const mailingListLink = optionalUrl(formData.get("mailingListLink"));
+  if (mailingListLink === false) redirect("/dashboard/settings?error=mailingListLink");
 
   await prisma.business.update({
     where: { id: business.id },
     data: {
       name,
-      category: String(formData.get("category") ?? business.category),
-      logoUrl: String(formData.get("logoUrl") ?? "").trim() || null,
-      primaryColor: String(formData.get("primaryColor") ?? business.primaryColor),
-      accentColor: String(formData.get("accentColor") ?? business.accentColor),
-      mailingListLink: String(formData.get("mailingListLink") ?? "").trim() || null,
-      sharePhrase:
-        String(formData.get("sharePhrase") ?? "").trim().slice(0, MAX_SHARE_PHRASE_LENGTH) ||
-        null,
+      category,
+      logoUrl,
+      primaryColor,
+      accentColor,
+      mailingListLink,
+      sharePhrase: optionalText(formData.get("sharePhrase"), MAX_SHARE_PHRASE_LENGTH),
     },
   });
 
