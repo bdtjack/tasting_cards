@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { defaultShowAbv, getPriceLabels, resolveProductType } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
 import { uniqueProductSlug } from "@/lib/uniqueSlug";
-import { LIMITS, cleanText, optionalText } from "@/lib/validate";
+import { LIMITS, cleanText, optionalText, optionalUrl } from "@/lib/validate";
 import type { BusinessCategory } from "@/lib/types";
 
 export async function createProduct(formData: FormData) {
@@ -32,6 +32,9 @@ export async function createProduct(formData: FormData) {
     if (value) priceValues[label] = value;
   }
 
+  const photoUrl = optionalUrl(formData.get("photoUrl"));
+  if (photoUrl === false) throw new Error("Photo link is not a valid web address");
+
   await prisma.product.create({
     data: {
       businessId: business.id,
@@ -40,6 +43,7 @@ export async function createProduct(formData: FormData) {
       category: cleanText(formData.get("category"), LIMITS.category),
       subtitle: optionalText(formData.get("subtitle"), LIMITS.subtitle),
       productType,
+      photoUrl,
       description: optionalText(formData.get("description"), LIMITS.description),
       // Locked in now, from the product type at this moment —
       // does not get re-derived later if the business's category changes.

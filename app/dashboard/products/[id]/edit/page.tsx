@@ -5,6 +5,7 @@ import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fiel
 import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
 import { LIMITS } from "@/lib/validate";
+import ImageUpload from "@/components/ImageUpload";
 import type { BusinessCategory } from "@/lib/types";
 import { updateProduct, setProductStatus } from "./actions";
 
@@ -68,6 +69,14 @@ export default async function EditProductPage({
         <Field label="Proof / ABV (leave blank if not applicable)">
           <input name="proofAbv" maxLength={LIMITS.proofAbv} defaultValue={product.proofAbv ?? ""} className="input" />
         </Field>
+
+        <ImageUpload
+          name="photoUrl"
+          label="Photo (optional)"
+          initialUrl={product.photoUrl}
+          maxDimension={1200}
+          help="A bottle, can or cocktail shot. JPG, PNG or WebP."
+        />
 
         <Field label="Description (optional)">
           <textarea

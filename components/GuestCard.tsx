@@ -19,6 +19,7 @@ type Product = {
   subtitle: string | null;
   showAbv: boolean;
   proofAbv: string | null;
+  photoUrl: string | null;
   description: string | null;
   aroma: string | null;
   palate: string | null;
@@ -75,6 +76,24 @@ export default function GuestCard({
             {business.name}
           </span>
         </div>
+
+        {product.photoUrl && (
+          <div className="px-6 pt-6">
+            <div
+              className="rounded-lg flex items-center justify-center py-4"
+              style={{ backgroundColor: "#00000033" }}
+            >
+              {/* crossOrigin lets the "keep for later" image export include the photo */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={product.photoUrl}
+                alt={product.name}
+                crossOrigin="anonymous"
+                className="max-h-72 w-auto max-w-full object-contain"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="px-6 pt-8 pb-1">
           <p className="font-serif text-[40px] leading-tight" style={{ color: "#F5F1E8" }}>

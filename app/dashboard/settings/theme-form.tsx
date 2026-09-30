@@ -4,6 +4,7 @@ import { useState } from "react";
 import { updateBusinessTheme } from "./actions";
 import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
 import { LIMITS } from "@/lib/validate";
+import ImageUpload from "@/components/ImageUpload";
 
 const CATEGORIES = [
   { value: "WINERY", label: "Winery" },
@@ -73,25 +74,15 @@ export default function ThemeForm({
         <div className="border-t border-neutral-200 pt-4 space-y-4">
           <p className="text-sm font-medium text-neutral-600">Theme</p>
 
-          <label className="block">
-            <span className="block text-sm text-neutral-600 mb-1">
-              Logo URL (image link)
-            </span>
-            <input
-              name="logoUrl"
-              type="url"
-              maxLength={LIMITS.url}
-              value={logoUrl}
-              onChange={(e) => setLogoUrl(e.target.value)}
-              placeholder="https://"
-              className="input"
-            />
-            <span className="block text-xs text-neutral-500 mt-1">
-              Paste a link to your logo image. File upload is coming later — for
-              now, host the image anywhere (your website, an image host) and
-              paste the link here.
-            </span>
-          </label>
+          <ImageUpload
+            name="logoUrl"
+            label="Logo"
+            initialUrl={business.logoUrl}
+            maxDimension={256}
+            shape="round"
+            onChange={setLogoUrl}
+            help="JPG, PNG or WebP. Shown small and round on your cards."
+          />
 
           <div className="grid grid-cols-2 gap-4">
             <label className="block">

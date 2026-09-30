@@ -84,6 +84,7 @@ export default async function GuestCardPage({
         subtitle: product.subtitle,
         showAbv: product.showAbv,
         proofAbv: product.proofAbv,
+        photoUrl: product.photoUrl,
         description: product.description,
         aroma: product.aroma,
         palate: product.palate,

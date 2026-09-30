@@ -7,6 +7,7 @@ import {
   resolveProductType,
 } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
+import ImageUpload from "@/components/ImageUpload";
 import { LIMITS } from "@/lib/validate";
 import type { BusinessCategory } from "@/lib/types";
 import { createProduct } from "./actions";
@@ -94,6 +95,14 @@ export default async function NewProductPage({
         <Field label="Proof / ABV (leave blank if not applicable)">
           <input name="proofAbv" maxLength={LIMITS.proofAbv} className="input" />
         </Field>
+
+        <ImageUpload
+          name="photoUrl"
+          label="Photo (optional)"
+          initialUrl={null}
+          maxDimension={1200}
+          help="A bottle, can or cocktail shot. JPG, PNG or WebP."
+        />
 
         <Field label="Description (optional)">
           <textarea

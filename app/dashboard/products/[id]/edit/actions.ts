@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
 import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
 import { parseJsonField } from "@/lib/json";
-import { LIMITS, cleanText, optionalText } from "@/lib/validate";
+import { LIMITS, cleanText, optionalText, optionalUrl } from "@/lib/validate";
 import type { BusinessCategory, ProductStatus } from "@/lib/types";
 
 const STATUSES: ProductStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
@@ -47,6 +47,9 @@ export async function updateProduct(formData: FormData) {
     if (value) priceValues[label] = value;
   }
 
+  const photoUrl = optionalUrl(formData.get("photoUrl"));
+  if (photoUrl === false) throw new Error("Photo link is not a valid web address");
+
   await prisma.product.update({
     where: { id },
     data: {
@@ -54,6 +57,7 @@ export async function updateProduct(formData: FormData) {
       category: cleanText(formData.get("category"), LIMITS.category),
       subtitle: optionalText(formData.get("subtitle"), LIMITS.subtitle),
       proofAbv: optionalText(formData.get("proofAbv"), LIMITS.proofAbv),
+      photoUrl,
       description: optionalText(formData.get("description"), LIMITS.description),
       aroma: optionalText(formData.get("aroma"), LIMITS.note),
       palate: optionalText(formData.get("palate"), LIMITS.note),
