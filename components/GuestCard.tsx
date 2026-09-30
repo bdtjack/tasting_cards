@@ -79,11 +79,11 @@ export default function GuestCard({
         </div>
 
         {/*
-          With a photo: photo on the left, name + tasting notes beside it.
+          With a photo: photo on the right, name + tasting notes beside it.
           Without one: the original single-column layout (same markup, just
           with the padding on each piece instead of on the row).
         */}
-        <div className={hasPhoto ? "px-6 pt-6 flex gap-4 items-start" : undefined}>
+        <div className={hasPhoto ? "px-6 pt-6 flex flex-row-reverse gap-5 items-start" : undefined}>
           {product.photoUrl && (
             // crossOrigin lets the "keep for later" image export include the photo
             // eslint-disable-next-line @next/next/no-img-element
@@ -103,7 +103,10 @@ export default function GuestCard({
               >
                 {product.name}
               </p>
-              <p className="text-base mt-1.5" style={{ color: business.accentColor }}>
+              <p
+                className={`mt-1.5 ${hasPhoto ? "text-sm tracking-wide leading-snug" : "text-base"}`}
+                style={{ color: business.accentColor }}
+              >
                 {[product.category, product.subtitle].filter(Boolean).join(" · ").toUpperCase()}
               </p>
             </div>
@@ -112,7 +115,7 @@ export default function GuestCard({
               <>
                 <div className={hasPhoto ? undefined : "px-6 pb-1"}>
                   <div
-                    className={hasPhoto ? "h-px my-3" : "h-px my-4"}
+                    className="h-px my-4"
                     style={{ background: `linear-gradient(90deg, ${business.accentColor}, transparent)` }}
                   />
                 </div>
