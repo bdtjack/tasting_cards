@@ -6,6 +6,7 @@ import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
 import { LIMITS } from "@/lib/validate";
 import ImageUpload from "@/components/ImageUpload";
+import CountedTextarea from "@/components/CountedTextarea";
 import type { BusinessCategory } from "@/lib/types";
 import { updateProduct, setProductStatus } from "./actions";
 
@@ -79,12 +80,7 @@ export default async function EditProductPage({
         />
 
         <Field label="Description (optional)">
-          <textarea
-            name="description" maxLength={LIMITS.description}
-            rows={3}
-            defaultValue={product.description ?? ""}
-            className="input"
-          />
+          <CountedTextarea name="description" maxLength={LIMITS.description} rows={3} defaultValue={product.description ?? ""} />
         </Field>
 
         <fieldset className="border-t border-neutral-200 pt-4 space-y-3">
@@ -92,13 +88,13 @@ export default async function EditProductPage({
             Tasting notes
           </legend>
           <Field label="Aroma">
-            <textarea name="aroma" maxLength={LIMITS.note} rows={2} defaultValue={product.aroma ?? ""} className="input" />
+            <CountedTextarea name="aroma" maxLength={LIMITS.note} defaultValue={product.aroma ?? ""} />
           </Field>
           <Field label="Palate">
-            <textarea name="palate" maxLength={LIMITS.note} rows={2} defaultValue={product.palate ?? ""} className="input" />
+            <CountedTextarea name="palate" maxLength={LIMITS.note} defaultValue={product.palate ?? ""} />
           </Field>
           <Field label="Finish">
-            <textarea name="finish" maxLength={LIMITS.note} rows={2} defaultValue={product.finish ?? ""} className="input" />
+            <CountedTextarea name="finish" maxLength={LIMITS.note} defaultValue={product.finish ?? ""} />
           </Field>
         </fieldset>
 

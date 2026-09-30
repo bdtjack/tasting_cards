@@ -8,6 +8,7 @@ import {
 } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
 import ImageUpload from "@/components/ImageUpload";
+import CountedTextarea from "@/components/CountedTextarea";
 import { LIMITS } from "@/lib/validate";
 import type { BusinessCategory } from "@/lib/types";
 import { createProduct } from "./actions";
@@ -105,11 +106,7 @@ export default async function NewProductPage({
         />
 
         <Field label="Description (optional)">
-          <textarea
-            name="description" maxLength={LIMITS.description}
-            rows={3}
-            className="input"
-          />
+          <CountedTextarea name="description" maxLength={LIMITS.description} rows={3} />
         </Field>
 
         <fieldset className="border-t border-neutral-200 pt-4 space-y-3">
@@ -117,13 +114,13 @@ export default async function NewProductPage({
             Tasting notes
           </legend>
           <Field label="Aroma">
-            <textarea name="aroma" maxLength={LIMITS.note} rows={2} className="input" />
+            <CountedTextarea name="aroma" maxLength={LIMITS.note} />
           </Field>
           <Field label="Palate">
-            <textarea name="palate" maxLength={LIMITS.note} rows={2} className="input" />
+            <CountedTextarea name="palate" maxLength={LIMITS.note} />
           </Field>
           <Field label="Finish">
-            <textarea name="finish" maxLength={LIMITS.note} rows={2} className="input" />
+            <CountedTextarea name="finish" maxLength={LIMITS.note} />
           </Field>
         </fieldset>
 
