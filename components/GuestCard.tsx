@@ -48,6 +48,7 @@ export default function GuestCard({
     text: shareCaption ?? `${product.name} from ${business.name}`,
   });
 
+  const hasPhoto = Boolean(product.photoUrl);
   const priceEntries = Object.entries(product.prices).filter(([, value]) => value);
 
   return (
@@ -77,55 +78,70 @@ export default function GuestCard({
           </span>
         </div>
 
-        {product.photoUrl && (
-          <div className="px-6 pt-6">
-            <div
-              className="rounded-lg flex items-center justify-center py-4"
-              style={{ backgroundColor: "#00000033" }}
-            >
-              {/* crossOrigin lets the "keep for later" image export include the photo */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={product.photoUrl}
-                alt={product.name}
-                crossOrigin="anonymous"
-                className="max-h-72 w-auto max-w-full object-contain"
-              />
-            </div>
-          </div>
-        )}
+        {/*
+          With a photo: photo on the left, name + tasting notes beside it.
+          Without one: the original single-column layout (same markup, just
+          with the padding on each piece instead of on the row).
+        */}
+        <div className={hasPhoto ? "px-6 pt-6 flex gap-4 items-start" : undefined}>
+          {product.photoUrl && (
+            // crossOrigin lets the "keep for later" image export include the photo
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={product.photoUrl}
+              alt={product.name}
+              crossOrigin="anonymous"
+              className="w-[34%] shrink-0 h-auto max-h-96 object-contain rounded-md"
+            />
+          )}
 
-        <div className="px-6 pt-8 pb-1">
-          <p className="font-serif text-[40px] leading-tight" style={{ color: "#F5F1E8" }}>
-            {product.name}
-          </p>
-          <p className="text-base mt-1.5" style={{ color: business.accentColor }}>
-            {[product.category, product.subtitle].filter(Boolean).join(" · ").toUpperCase()}
-          </p>
+          <div className={hasPhoto ? "min-w-0 flex-1" : undefined}>
+            <div className={hasPhoto ? undefined : "px-6 pt-8 pb-1"}>
+              <p
+                className={`font-serif leading-tight ${hasPhoto ? "text-3xl" : "text-[40px]"}`}
+                style={{ color: "#F5F1E8" }}
+              >
+                {product.name}
+              </p>
+              <p className="text-base mt-1.5" style={{ color: business.accentColor }}>
+                {[product.category, product.subtitle].filter(Boolean).join(" · ").toUpperCase()}
+              </p>
+            </div>
+
+            {!isArchived && (
+              <>
+                <div className={hasPhoto ? undefined : "px-6 pb-1"}>
+                  <div
+                    className={hasPhoto ? "h-px my-3" : "h-px my-4"}
+                    style={{ background: `linear-gradient(90deg, ${business.accentColor}, transparent)` }}
+                  />
+                </div>
+
+                <div className={`${hasPhoto ? "" : "px-6 "}pb-2 space-y-5`}>
+                  {product.showAbv && product.proofAbv && (
+                    <NoteRow label="Proof / ABV" value={product.proofAbv} accentColor={business.accentColor} />
+                  )}
+                  {!hasPhoto && product.description && (
+                    <NoteRow label="Description" value={product.description} accentColor={business.accentColor} />
+                  )}
+                  {product.aroma && <NoteRow label="Aroma" value={product.aroma} accentColor={business.accentColor} />}
+                  {product.palate && <NoteRow label="Palate" value={product.palate} accentColor={business.accentColor} />}
+                  {product.finish && <NoteRow label="Finish" value={product.finish} accentColor={business.accentColor} />}
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
         {isArchived ? (
           <ArchivedBody accentColor={business.accentColor} mailingListLink={business.mailingListLink} />
         ) : (
           <>
-            <div className="px-6 pb-1">
-              <div
-                className="h-px my-4"
-                style={{ background: `linear-gradient(90deg, ${business.accentColor}, transparent)` }}
-              />
-            </div>
-
-            <div className="px-6 pb-2 space-y-5">
-              {product.showAbv && product.proofAbv && (
-                <NoteRow label="Proof / ABV" value={product.proofAbv} accentColor={business.accentColor} />
-              )}
-              {product.description && (
+            {hasPhoto && product.description && (
+              <div className="px-6 pt-5">
                 <NoteRow label="Description" value={product.description} accentColor={business.accentColor} />
-              )}
-              {product.aroma && <NoteRow label="Aroma" value={product.aroma} accentColor={business.accentColor} />}
-              {product.palate && <NoteRow label="Palate" value={product.palate} accentColor={business.accentColor} />}
-              {product.finish && <NoteRow label="Finish" value={product.finish} accentColor={business.accentColor} />}
-            </div>
+              </div>
+            )}
 
             {shareCaption && (
               <div className="px-6 pt-4">
