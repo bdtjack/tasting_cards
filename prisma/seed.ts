@@ -245,9 +245,10 @@ async function main() {
     },
   });
 
-  // Re-running the seed shouldn't duplicate flight items.
-  await prisma.flightItem.deleteMany({ where: { flightId: reserveFlight.id } });
-  await prisma.flightItem.createMany({
+  // Only fill the flight if it's empty — re-running the seed must neither
+  // duplicate items nor undo changes made to the flight in the dashboard.
+  const existingItems = await prisma.flightItem.count({ where: { flightId: reserveFlight.id } });
+  if (existingItems === 0) await prisma.flightItem.createMany({
     data: [
       { flightId: reserveFlight.id, productId: pinto.id, order: 0 },
       { flightId: reserveFlight.id, productId: reserveRed.id, order: 1 },
