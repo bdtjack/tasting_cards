@@ -1,7 +1,7 @@
-// SQLite (used for local dev) has no native enum type, so BusinessCategory
-// and ProductStatus are stored as plain strings in the database. These
-// types give the same safety at the TypeScript layer that a Postgres enum
-// would give at the database layer.
+// BusinessCategory, ProductStatus, etc. are stored as plain strings in the
+// database (a leftover from the project's SQLite days — see the note at the
+// top of prisma/schema.prisma). These types give the same safety at the
+// TypeScript layer that a Postgres enum would give at the database layer.
 
 export type BusinessCategory = "WINERY" | "BREWERY" | "DISTILLERY" | "MIXED";
 

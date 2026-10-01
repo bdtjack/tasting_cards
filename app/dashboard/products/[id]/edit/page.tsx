@@ -4,18 +4,25 @@ import { prisma } from "@/lib/prisma";
 import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
 import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
+import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
+import { uploadFolderFor } from "@/lib/blob";
 import { LIMITS } from "@/lib/validate";
+import { PRODUCT_ERROR_MESSAGES } from "@/lib/formErrors";
 import ImageUpload from "@/components/ImageUpload";
 import CountedTextarea from "@/components/CountedTextarea";
+import FormError, { NOT_BLANK } from "@/components/FormError";
 import type { BusinessCategory } from "@/lib/types";
 import { updateProduct, setProductStatus } from "./actions";
 
 export default async function EditProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
 
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
@@ -38,6 +45,8 @@ export default async function EditProductPage({
         : getPrimaryProductType(business.category as BusinessCategory) ?? "SPIRIT"
     );
   const prices = parseJsonField<Record<string, string>>(product.prices, {});
+  const guestPath = `/${business.slug}/${product.slug}`;
+  const qrTarget = `${displayHost(await baseUrlForPage())}${guestPath}`;
 
   return (
     <main className="max-w-lg mx-auto p-8">
@@ -51,11 +60,20 @@ export default async function EditProductPage({
         The QR code for this product stays the same no matter what you change here.
       </p>
 
+      <FormError code={error} messages={PRODUCT_ERROR_MESSAGES} />
+
       <form action={updateProduct} className="space-y-4">
         <input type="hidden" name="id" value={product.id} />
 
         <Field label="Product name">
-          <input name="name" maxLength={LIMITS.name} required defaultValue={product.name} className="input" />
+          <input
+            name="name"
+            maxLength={LIMITS.name}
+            required
+            {...NOT_BLANK}
+            defaultValue={product.name}
+            className="input"
+          />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
@@ -67,13 +85,20 @@ export default async function EditProductPage({
           </Field>
         </div>
 
-        <Field label="Proof / ABV (leave blank if not applicable)">
-          <input name="proofAbv" maxLength={LIMITS.proofAbv} defaultValue={product.proofAbv ?? ""} className="input" />
-        </Field>
+        <div>
+          <Field label="Proof / ABV (leave blank if not applicable)">
+            <input name="proofAbv" maxLength={LIMITS.proofAbv} defaultValue={product.proofAbv ?? ""} className="input" />
+          </Field>
+          <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600">
+            <input type="checkbox" name="showAbv" defaultChecked={product.showAbv} />
+            Show proof / ABV on the guest card
+          </label>
+        </div>
 
         <ImageUpload
           name="photoUrl"
           label="Photo (optional)"
+          folder={uploadFolderFor(business.slug)}
           initialUrl={product.photoUrl}
           maxDimension={1200}
           help="A bottle, can or cocktail shot. JPG, PNG or WebP."
@@ -101,7 +126,6 @@ export default async function EditProductPage({
         <fieldset className="border-t border-neutral-200 pt-4 space-y-3">
           <legend className="text-sm font-medium text-neutral-600 mb-1">Optional</legend>
 
-          <input type="hidden" name="priceLabels" value={JSON.stringify(priceLabels)} />
           <div className={`grid gap-4 ${priceLabels.length > 1 ? "grid-cols-2" : ""}`}>
             {priceLabels.map((label) => (
               <Field key={label} label={label}>
@@ -148,9 +172,10 @@ export default async function EditProductPage({
       {product.status !== "DRAFT" && (
         <div className="border-t border-neutral-200 mt-6 pt-6">
           <p className="text-sm font-medium text-neutral-600 mb-1">QR code</p>
-          <p className="text-xs text-neutral-500 mb-3">
-            This stays the same even if you edit the product's details later.
+          <p className="text-xs text-neutral-500 mb-1">
+            This stays the same even if you edit the product&apos;s details later.
           </p>
+          <p className="text-xs text-neutral-500 mb-3 break-all">Points to {qrTarget}</p>
           <div className="flex items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -167,7 +192,7 @@ export default async function EditProductPage({
                 Download PNG
               </a>
               <a
-                href={`/${business.slug}/${product.slug}`}
+                href={guestPath}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-neutral-500 text-center"

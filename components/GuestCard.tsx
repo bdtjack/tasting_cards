@@ -2,12 +2,16 @@
 
 import { useCardShare } from "@/lib/useCardShare";
 import { buildShareCaption } from "@/lib/shareCaption";
+import { cardPalette, type CardPalette } from "@/lib/color";
+import CardHeader from "@/components/CardHeader";
+import { cardFontStyle } from "@/lib/cardFonts";
 
 type Business = {
   name: string;
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  cardFont: string;
   mailingListLink: string | null;
   sharePhrase: string | null;
 };
@@ -36,6 +40,8 @@ export default function GuestCard({
   product: Product;
   isArchived: boolean;
 }) {
+  const p = cardPalette(business.primaryColor, business.accentColor);
+
   const shareCaption = buildShareCaption({
     sharePhrase: business.sharePhrase,
     itemName: product.name,
@@ -56,27 +62,9 @@ export default function GuestCard({
       <div
         ref={cardRef}
         className="w-full max-w-lg rounded-xl overflow-hidden"
-        style={{ backgroundColor: business.primaryColor }}
+        style={{ backgroundColor: p.background, ...cardFontStyle(business.cardFont) }}
       >
-        <div
-          className="px-6 py-5 flex items-center gap-3 border-b"
-          style={{ borderColor: `${business.accentColor}40` }}
-        >
-          {business.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.logoUrl} alt="" className="w-9 h-9 rounded-full" crossOrigin="anonymous" />
-          ) : (
-            <div
-              className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-serif"
-              style={{ borderColor: business.accentColor, color: business.accentColor }}
-            >
-              {business.name.slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <span className="text-sm tracking-wider uppercase" style={{ color: business.accentColor }}>
-            {business.name}
-          </span>
-        </div>
+        <CardHeader name={business.name} logoUrl={business.logoUrl} palette={p} />
 
         {/*
           With a photo: photo on the right, name + tasting notes beside it.
@@ -99,13 +87,13 @@ export default function GuestCard({
             <div className={hasPhoto ? undefined : "px-6 pt-8 pb-1"}>
               <p
                 className={`font-serif leading-tight ${hasPhoto ? "text-3xl" : "text-[40px]"}`}
-                style={{ color: "#F5F1E8" }}
+                style={{ color: p.heading }}
               >
                 {product.name}
               </p>
               <p
                 className={`mt-1.5 ${hasPhoto ? "text-sm tracking-wide leading-snug" : "text-base"}`}
-                style={{ color: business.accentColor }}
+                style={{ color: p.accentText }}
               >
                 {[product.category, product.subtitle].filter(Boolean).join(" · ").toUpperCase()}
               </p>
@@ -116,20 +104,20 @@ export default function GuestCard({
                 <div className={hasPhoto ? undefined : "px-6 pb-1"}>
                   <div
                     className="h-px my-4"
-                    style={{ background: `linear-gradient(90deg, ${business.accentColor}, transparent)` }}
+                    style={{ background: `linear-gradient(90deg, ${p.accent}, transparent)` }}
                   />
                 </div>
 
                 <div className={`${hasPhoto ? "" : "px-6 "}pb-2 space-y-5`}>
                   {product.showAbv && product.proofAbv && (
-                    <NoteRow label="Proof / ABV" value={product.proofAbv} accentColor={business.accentColor} />
+                    <NoteRow label="Proof / ABV" value={product.proofAbv} palette={p} />
                   )}
                   {!hasPhoto && product.description && (
-                    <NoteRow label="Description" value={product.description} accentColor={business.accentColor} />
+                    <NoteRow label="Description" value={product.description} palette={p} />
                   )}
-                  {product.aroma && <NoteRow label="Aroma" value={product.aroma} accentColor={business.accentColor} />}
-                  {product.palate && <NoteRow label="Palate" value={product.palate} accentColor={business.accentColor} />}
-                  {product.finish && <NoteRow label="Finish" value={product.finish} accentColor={business.accentColor} />}
+                  {product.aroma && <NoteRow label="Aroma" value={product.aroma} palette={p} />}
+                  {product.palate && <NoteRow label="Palate" value={product.palate} palette={p} />}
+                  {product.finish && <NoteRow label="Finish" value={product.finish} palette={p} />}
                 </div>
               </>
             )}
@@ -137,12 +125,12 @@ export default function GuestCard({
         </div>
 
         {isArchived ? (
-          <ArchivedBody accentColor={business.accentColor} mailingListLink={business.mailingListLink} />
+          <ArchivedBody palette={p} mailingListLink={business.mailingListLink} />
         ) : (
           <>
             {hasPhoto && product.description && (
               <div className="px-6 pt-5">
-                <NoteRow label="Description" value={product.description} accentColor={business.accentColor} />
+                <NoteRow label="Description" value={product.description} palette={p} />
               </div>
             )}
 
@@ -150,7 +138,7 @@ export default function GuestCard({
               <div className="px-6 pt-4">
                 <p
                   className="font-serif italic text-sm text-center"
-                  style={{ color: `${business.accentColor}CC` }}
+                  style={{ color: `${p.accentText}CC` }}
                 >
                   {shareCaption}
                 </p>
@@ -159,14 +147,16 @@ export default function GuestCard({
 
             <div
               className="px-6 pt-5 pb-2.5 flex items-center justify-between border-t"
-              style={{ borderColor: `${business.accentColor}30` }}
+              style={{ borderColor: `${p.accent}30` }}
             >
               {priceEntries.length > 0 ? (
-                <div className="flex items-baseline gap-4">
+                <div className="flex items-baseline gap-4 flex-wrap">
                   {priceEntries.map(([label, value]) => (
                     <span key={label} className="text-base">
-                      <span style={{ color: business.accentColor }}>{label}</span>{" "}
-                      <span className="font-serif text-white">{value}</span>
+                      <span style={{ color: p.accentText }}>{label}</span>{" "}
+                      <span className="font-serif" style={{ color: p.heading }}>
+                        {value}
+                      </span>
                     </span>
                   ))}
                 </div>
@@ -177,8 +167,8 @@ export default function GuestCard({
                 onClick={handleSaveCard}
                 data-no-snapshot
                 disabled={saving}
-                className="text-sm px-4 py-2.5 rounded-md font-medium disabled:opacity-60"
-                style={{ backgroundColor: business.accentColor, color: "#0D0D0D" }}
+                className="text-sm px-4 py-2.5 rounded-md font-medium disabled:opacity-60 flex-shrink-0"
+                style={{ backgroundColor: p.accent, color: p.onAccent }}
               >
                 {saving ? "Saving…" : "Save card"}
               </button>
@@ -192,7 +182,7 @@ export default function GuestCard({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-                  style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+                  style={{ borderColor: `${p.accent}80`, color: p.accentText }}
                 >
                   Join the list
                 </a>
@@ -200,7 +190,7 @@ export default function GuestCard({
               <button
                 onClick={handleShare}
                 className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-                style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+                style={{ borderColor: `${p.accent}80`, color: p.accentText }}
               >
                 {copied ? "Link copied" : "Share"}
               </button>
@@ -213,36 +203,37 @@ export default function GuestCard({
 }
 
 function ArchivedBody({
-  accentColor,
+  palette: p,
   mailingListLink,
 }: {
-  accentColor: string;
+  palette: CardPalette;
   mailingListLink: string | null;
 }) {
   return (
     <>
-      <div className="px-6 pb-1">
+      <div className="px-6 pt-4 pb-1">
         <span
           className="inline-block text-sm px-3 py-1.5 rounded-md"
-          style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
+          style={{ backgroundColor: `${p.accent}20`, color: p.accentText }}
         >
           No longer available
         </span>
       </div>
-      <div className="px-6 pt-5 pb-2">
-        <p className="text-base leading-relaxed" style={{ color: `${accentColor}CC` }}>
-          This vintage sold out. Join the list below to hear first when the next release
-          drops.
+      <div className="px-6 pt-5 pb-6">
+        <p className="text-base leading-relaxed" style={{ color: `${p.accentText}CC` }}>
+          {mailingListLink
+            ? "This one's sold out. Join the list below to hear first when the next release drops."
+            : "This one's sold out. Ask your server what's pouring today."}
         </p>
       </div>
       {mailingListLink && (
-        <div className="px-6 pt-4 pb-6">
+        <div className="px-6 pb-6">
           <a
             href={mailingListLink}
             target="_blank"
             rel="noopener noreferrer"
             className="block w-full text-center text-base py-3 rounded-md font-medium"
-            style={{ backgroundColor: accentColor, color: "#0D0D0D" }}
+            style={{ backgroundColor: p.accent, color: p.onAccent }}
           >
             Join the list
           </a>
@@ -252,13 +243,15 @@ function ArchivedBody({
   );
 }
 
-function NoteRow({ label, value, accentColor }: { label: string; value: string; accentColor: string }) {
+function NoteRow({ label, value, palette: p }: { label: string; value: string; palette: CardPalette }) {
   return (
     <div>
-      <p className="text-sm tracking-wider uppercase mb-1" style={{ color: accentColor }}>
+      <p className="text-sm tracking-wider uppercase mb-1" style={{ color: p.accentText }}>
         {label}
       </p>
-      <p className="text-base text-neutral-100 whitespace-pre-line">{value}</p>
+      <p className="text-base whitespace-pre-line" style={{ color: p.heading }}>
+        {value}
+      </p>
     </div>
   );
 }

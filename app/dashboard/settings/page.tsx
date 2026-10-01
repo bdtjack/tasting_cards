@@ -1,5 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/auth";
+import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
+import { uploadFolderFor } from "@/lib/blob";
 import ThemeForm from "./theme-form";
 import { changePassword } from "./actions";
 
@@ -26,6 +28,7 @@ export default async function SettingsPage({
   if (!business) redirect("/login");
 
   const { saved, error, pwSaved, pwError } = await searchParams;
+  const host = displayHost(await baseUrlForPage());
 
   return (
     <main className="max-w-3xl mx-auto p-8">
@@ -47,7 +50,7 @@ export default async function SettingsPage({
 
       <div className="mb-6 text-sm text-neutral-500">
         Card URL:{" "}
-        <span className="text-neutral-700">yourdomain.com/{business.slug}/...</span>
+        <span className="text-neutral-700">{host}/{business.slug}/...</span>
         <span className="block text-xs text-neutral-400 mt-0.5">
           This is baked into every QR code you&apos;ve printed, so it can&apos;t be
           changed here.
@@ -55,12 +58,14 @@ export default async function SettingsPage({
       </div>
 
       <ThemeForm
+        uploadFolder={uploadFolderFor(business.slug)}
         business={{
           name: business.name,
           category: business.category,
           logoUrl: business.logoUrl,
           primaryColor: business.primaryColor,
           accentColor: business.accentColor,
+          cardFont: business.cardFont,
           mailingListLink: business.mailingListLink,
           sharePhrase: business.sharePhrase,
         }}
@@ -74,7 +79,7 @@ export default async function SettingsPage({
 
         {pwSaved && (
           <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2 mb-4">
-            Password updated.
+            Password updated. Any other devices logged in to this account have been signed out.
           </p>
         )}
         {pwError && PASSWORD_ERROR_MESSAGES[pwError] && (

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
-import { ownedProductIds, uniqueFlightSlug } from "@/lib/uniqueSlug";
+import { createWithFreshSlug, ownedProductIds, uniqueFlightSlug } from "@/lib/uniqueSlug";
 import { LIMITS, cleanText, optionalText } from "@/lib/validate";
 import { readFlightPrice, readSelectionCount } from "@/lib/flightForm";
 
@@ -12,28 +12,33 @@ export async function createFlight(formData: FormData) {
   if (!business) redirect("/login");
 
   const name = cleanText(formData.get("name"), LIMITS.name);
-  if (!name) throw new Error("Flight name is required");
+  if (!name) redirect("/dashboard/flights/new?error=name");
 
   const description = optionalText(formData.get("description"), LIMITS.flightDescription);
   const price = readFlightPrice(formData);
+  // In the order the business arranged them — that's the order guests see.
   const productIds = await ownedProductIds(business.id, formData.getAll("productIds").map(String));
 
-  await prisma.flight.create({
-    data: {
-      businessId: business.id,
-      slug: await uniqueFlightSlug(business.id, name),
-      name,
-      description,
-      kind: "PRESET",
-      price,
-      items: {
-        create: productIds.map((productId, index) => ({
-          productId,
-          order: index,
-        })),
-      },
-    },
-  });
+  await createWithFreshSlug(
+    () => uniqueFlightSlug(business.id, name),
+    (slug) =>
+      prisma.flight.create({
+        data: {
+          businessId: business.id,
+          slug,
+          name,
+          description,
+          kind: "PRESET",
+          price,
+          items: {
+            create: productIds.map((productId, index) => ({
+              productId,
+              order: index,
+            })),
+          },
+        },
+      })
+  );
 
   redirect("/dashboard/flights");
 }
@@ -46,21 +51,28 @@ export async function createBuildYourOwnFlight(formData: FormData) {
   if (!business) redirect("/login");
 
   const name = cleanText(formData.get("name"), LIMITS.name);
-  if (!name) throw new Error("Flight name is required");
+  if (!name) redirect("/dashboard/flights/new?type=build-your-own&error=name");
+
+  const selectionCount = readSelectionCount(formData);
+  if (selectionCount === null) redirect("/dashboard/flights/new?type=build-your-own&error=selections");
 
   const description = optionalText(formData.get("description"), LIMITS.flightDescription);
 
-  await prisma.flight.create({
-    data: {
-      businessId: business.id,
-      slug: await uniqueFlightSlug(business.id, name),
-      name,
-      description,
-      kind: "BUILD_YOUR_OWN",
-      price: readFlightPrice(formData),
-      selectionCount: readSelectionCount(formData),
-    },
-  });
+  await createWithFreshSlug(
+    () => uniqueFlightSlug(business.id, name),
+    (slug) =>
+      prisma.flight.create({
+        data: {
+          businessId: business.id,
+          slug,
+          name,
+          description,
+          kind: "BUILD_YOUR_OWN",
+          price: readFlightPrice(formData),
+          selectionCount,
+        },
+      })
+  );
 
   redirect("/dashboard/flights");
 }

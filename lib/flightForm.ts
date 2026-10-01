@@ -9,9 +9,10 @@ export function readFlightPrice(formData: FormData): string | null {
 /**
  * Reads how many picks a build-your-own flight asks for, clamped to the
  * allowed range so a hand-edited form can't create a 0- or 500-step flight.
+ * Returns null if it's missing or not a number.
  */
-export function readSelectionCount(formData: FormData): number {
+export function readSelectionCount(formData: FormData): number | null {
   const raw = Number.parseInt(String(formData.get("selectionCount") ?? ""), 10);
-  if (!Number.isFinite(raw)) throw new Error("Number of selections is required");
+  if (!Number.isFinite(raw)) return null;
   return Math.min(MAX_SELECTIONS, Math.max(MIN_SELECTIONS, raw));
 }

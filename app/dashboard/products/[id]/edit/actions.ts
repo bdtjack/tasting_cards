@@ -1,14 +1,24 @@
 "use server";
 
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
+import { deleteReplacedImage } from "@/lib/blob";
 import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
 import { parseJsonField } from "@/lib/json";
 import { LIMITS, cleanText, optionalText, optionalUrl } from "@/lib/validate";
 import type { BusinessCategory, ProductStatus } from "@/lib/types";
 
-const STATUSES: ProductStatus[] = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+// The only status changes the dashboard offers. Anything else (e.g. sending
+// a published or archived product back to draft, which would turn its
+// printed QR code into a "not found" page) is refused even if a request is
+// hand-edited to ask for it.
+const ALLOWED_TRANSITIONS: Record<ProductStatus, ProductStatus[]> = {
+  DRAFT: ["PUBLISHED"],
+  PUBLISHED: ["ARCHIVED"],
+  ARCHIVED: ["PUBLISHED"],
+};
 
 // Loads a product but only if it belongs to the current logged-in
 // business — this is the tenant-isolation check. Without it, someone
@@ -28,9 +38,13 @@ async function getOwnedProduct(id: string) {
 export async function updateProduct(formData: FormData) {
   const id = String(formData.get("id"));
   const { business, product } = await getOwnedProduct(id); // ownership check
+  const backToForm = `/dashboard/products/${id}/edit`;
 
   const name = cleanText(formData.get("name"), LIMITS.name);
-  if (!name) throw new Error("Product name is required");
+  if (!name) redirect(`${backToForm}?error=name`);
+
+  const photoUrl = optionalUrl(formData.get("photoUrl"));
+  if (photoUrl === false) redirect(`${backToForm}?error=photo`);
 
   // Price labels come from what was snapshotted on the product at creation,
   // never from the submitted form.
@@ -47,9 +61,6 @@ export async function updateProduct(formData: FormData) {
     if (value) priceValues[label] = value;
   }
 
-  const photoUrl = optionalUrl(formData.get("photoUrl"));
-  if (photoUrl === false) throw new Error("Photo link is not a valid web address");
-
   await prisma.product.update({
     where: { id },
     data: {
@@ -57,6 +68,7 @@ export async function updateProduct(formData: FormData) {
       category: cleanText(formData.get("category"), LIMITS.category),
       subtitle: optionalText(formData.get("subtitle"), LIMITS.subtitle),
       proofAbv: optionalText(formData.get("proofAbv"), LIMITS.proofAbv),
+      showAbv: formData.get("showAbv") === "on",
       photoUrl,
       description: optionalText(formData.get("description"), LIMITS.description),
       aroma: optionalText(formData.get("aroma"), LIMITS.note),
@@ -67,15 +79,20 @@ export async function updateProduct(formData: FormData) {
     },
   });
 
+  // Clean up the old photo if it was replaced or removed — after the
+  // response, so saving isn't slowed down.
+  after(() => deleteReplacedImage(product.photoUrl, photoUrl, business.slug));
+
   redirect("/dashboard");
 }
 
 export async function setProductStatus(formData: FormData) {
   const id = String(formData.get("id"));
   const status = String(formData.get("status"));
-  await getOwnedProduct(id); // ownership check
+  const { product } = await getOwnedProduct(id); // ownership check
 
-  if (!(STATUSES as string[]).includes(status)) throw new Error("Invalid status");
+  const allowed = ALLOWED_TRANSITIONS[product.status as ProductStatus] ?? [];
+  if (!(allowed as string[]).includes(status)) redirect(`/dashboard/products/${id}/edit`);
 
   await prisma.product.update({ where: { id }, data: { status } });
 

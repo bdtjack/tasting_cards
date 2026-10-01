@@ -5,7 +5,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        serif: ["Georgia", "Cambria", "Times New Roman", "serif"],
+        // Guest cards set --card-heading-font to the business's chosen font
+        // (lib/cardFonts.ts); everywhere else this is plain Georgia.
+        serif: ["var(--card-heading-font, Georgia)", "Cambria", '"Times New Roman"', "serif"],
       },
     },
   },

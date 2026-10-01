@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getCurrentBusiness } from "@/lib/auth";
+import { uploadFolderFor } from "@/lib/blob";
 
 // Client-upload token endpoint for Vercel Blob. The browser uploads the file
 // straight to Blob storage (so it never passes through a serverless function
@@ -10,16 +11,21 @@ import { getCurrentBusiness } from "@/lib/auth";
 // Requires BLOB_READ_WRITE_TOKEN, which Vercel adds to the project when a
 // Blob store is connected to it.
 export async function POST(request: Request) {
-  const body = (await request.json()) as HandleUploadBody;
-
   try {
+    const body = (await request.json()) as HandleUploadBody;
+
     const result = await handleUpload({
       body,
       request,
-      onBeforeGenerateToken: async () => {
-        // Only logged-in businesses may upload.
+      onBeforeGenerateToken: async (pathname) => {
+        // Only logged-in businesses may upload, and only into their own
+        // folder — that's what lets lib/blob.ts safely delete a business's
+        // old images later without touching anyone else's.
         const business = await getCurrentBusiness();
         if (!business) throw new Error("Not signed in");
+        if (!pathname.startsWith(`${uploadFolderFor(business.slug)}/`)) {
+          throw new Error("Invalid upload location");
+        }
 
         return {
           allowedContentTypes: ["image/webp", "image/jpeg", "image/png"],

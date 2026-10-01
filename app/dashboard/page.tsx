@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
+import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
 
 const STATUS_STYLES: Record<string, string> = {
   PUBLISHED: "bg-green-100 text-green-800",
@@ -19,6 +20,8 @@ export default async function DashboardPage() {
       products: { orderBy: { createdAt: "desc" }, include: { _count: { select: { scans: true } } } },
     },
   });
+
+  const menuQrTarget = `${displayHost(await baseUrlForPage())}/${business.slug}`;
 
   return (
     <main className="max-w-3xl mx-auto p-8">
@@ -47,8 +50,9 @@ export default async function DashboardPage() {
           <p className="text-sm font-medium">Full menu QR code</p>
           <p className="text-xs text-neutral-500">
             One QR for everything currently published — separate from each
-            product's own code.
+            product&apos;s own code.
           </p>
+          <p className="text-xs text-neutral-400 truncate">Points to {menuQrTarget}</p>
         </div>
         <a
           href={`/api/qr/menu/${business.slug}`}
@@ -75,6 +79,17 @@ export default async function DashboardPage() {
         </div>
       ) : (
         <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-200 bg-white">
+          <div className="flex items-center gap-4 px-4 py-2 text-xs text-neutral-400">
+            <span className="flex-1">Product</span>
+            <span className="w-20 text-center">Status</span>
+            <span
+              className="w-12 text-right"
+              title="Guest page views — not counting link-preview bots or your own visits while logged in"
+            >
+              Views
+            </span>
+            <span className="w-[52px]" />
+          </div>
           {business.products.map((product: (typeof business.products)[number]) => (
             <div key={product.id} className="flex items-center gap-4 p-4">
               <div className="flex-1 min-w-0">
@@ -82,7 +97,7 @@ export default async function DashboardPage() {
                 <p className="text-xs text-neutral-500">{product.category}</p>
               </div>
               <span
-                className={`text-xs px-2.5 py-1 rounded-md ${STATUS_STYLES[product.status]}`}
+                className={`text-xs w-20 text-center py-1 rounded-md ${STATUS_STYLES[product.status]}`}
               >
                 {product.status.charAt(0) + product.status.slice(1).toLowerCase()}
               </span>

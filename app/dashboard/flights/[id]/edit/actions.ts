@@ -23,9 +23,10 @@ async function getOwnedFlight(id: string) {
 export async function updateFlight(formData: FormData) {
   const id = String(formData.get("id"));
   const flight = await getOwnedFlight(id); // ownership check
+  const backToForm = `/dashboard/flights/${id}/edit`;
 
   const name = cleanText(formData.get("name"), LIMITS.name);
-  if (!name) throw new Error("Flight name is required");
+  if (!name) redirect(`${backToForm}?error=name`);
 
   const description = optionalText(formData.get("description"), LIMITS.flightDescription);
   const price = readFlightPrice(formData);
@@ -33,13 +34,16 @@ export async function updateFlight(formData: FormData) {
   // Build-your-own flights have no product list to replace — just the
   // number of picks guests make.
   if (flight.kind === "BUILD_YOUR_OWN") {
+    const selectionCount = readSelectionCount(formData);
+    if (selectionCount === null) redirect(`${backToForm}?error=selections`);
     await prisma.flight.update({
       where: { id },
-      data: { name, description, price, selectionCount: readSelectionCount(formData) },
+      data: { name, description, price, selectionCount },
     });
     redirect("/dashboard/flights");
   }
 
+  // In the order the business arranged them — that's the order guests see.
   const productIds = await ownedProductIds(flight.businessId, formData.getAll("productIds").map(String));
 
   // Simplest correct way to apply a new product selection: replace every

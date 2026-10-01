@@ -1,8 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getCurrentBusiness, verifyPassword, hashPassword } from "@/lib/auth";
+import { getCurrentBusiness, verifyPassword, hashPassword, revokeOtherSessions } from "@/lib/auth";
+import { deleteReplacedImage } from "@/lib/blob";
+import { isCardFontId } from "@/lib/fontOptions";
 import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
 import { LIMITS, cleanText, isBusinessCategory, isHexColor, optionalText, optionalUrl } from "@/lib/validate";
 
@@ -22,6 +25,11 @@ export async function updateBusinessTheme(formData: FormData) {
     redirect("/dashboard/settings?error=color");
   }
 
+  // An unknown value (hand-edited form, or a font that's since been
+  // removed from the list) just keeps the current choice.
+  const requestedFont = formData.get("cardFont");
+  const cardFont = isCardFontId(requestedFont) ? requestedFont : business.cardFont;
+
   const logoUrl = optionalUrl(formData.get("logoUrl"));
   if (logoUrl === false) redirect("/dashboard/settings?error=logoUrl");
 
@@ -36,10 +44,15 @@ export async function updateBusinessTheme(formData: FormData) {
       logoUrl,
       primaryColor,
       accentColor,
+      cardFont,
       mailingListLink,
       sharePhrase: optionalText(formData.get("sharePhrase"), MAX_SHARE_PHRASE_LENGTH),
     },
   });
+
+  // Clean up the old logo if it was replaced or removed — after the
+  // response, so saving isn't slowed down.
+  after(() => deleteReplacedImage(business.logoUrl, logoUrl, business.slug));
 
   redirect("/dashboard/settings?saved=1");
 }
@@ -70,6 +83,10 @@ export async function changePassword(formData: FormData) {
     where: { id: business.id },
     data: { passwordHash },
   });
+
+  // Anyone else logged in with the old password (another device, or
+  // someone who shouldn't have had it) is signed out. This browser stays in.
+  await revokeOtherSessions(business.id);
 
   redirect("/dashboard/settings?pwSaved=1");
 }

@@ -10,7 +10,9 @@ import { upload } from "@vercel/blob/client";
 
 const ACCEPTED = "image/jpeg,image/png,image/webp";
 
-async function shrinkImage(file: File, maxDimension: number): Promise<Blob> {
+export type UploadFormat = "image/webp" | "image/png";
+
+async function shrinkImage(file: File, maxDimension: number, format: UploadFormat): Promise<Blob> {
   const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
   const width = Math.round(bitmap.width * scale);
@@ -22,11 +24,12 @@ async function shrinkImage(file: File, maxDimension: number): Promise<Blob> {
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 
-  // WebP keeps transparency (logos) at a small size. Browsers that can't
-  // encode it (older Safari) silently return PNG instead, which the upload
-  // route also accepts.
+  // WebP keeps photos small. Browsers that can't encode it (older Safari)
+  // silently return PNG instead, which the upload route also accepts.
+  // Logos are always PNG: they're small anyway, and the share-thumbnail
+  // generator (lib/og.tsx) can't draw WebP.
   const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/webp", 0.85)
+    canvas.toBlob(resolve, format, format === "image/webp" ? 0.85 : undefined)
   );
   if (!blob) throw new Error("Could not process that image");
   return blob;
@@ -35,18 +38,24 @@ async function shrinkImage(file: File, maxDimension: number): Promise<Blob> {
 export default function ImageUpload({
   name,
   label,
+  folder,
   initialUrl,
   maxDimension,
   help,
   shape = "square",
+  format = "image/webp",
   onChange,
 }: {
   name: string;
   label: string;
+  /** The business's upload folder — see uploadFolderFor() in lib/blob.ts. */
+  folder: string;
   initialUrl: string | null;
   maxDimension: number;
   help?: string;
   shape?: "round" | "square";
+  /** Encoding for the uploaded file. Use PNG for anything drawn into share thumbnails (logos). */
+  format?: UploadFormat;
   onChange?: (url: string) => void;
 }) {
   const [url, setUrl] = useState(initialUrl ?? "");
@@ -67,9 +76,9 @@ export default function ImageUpload({
     }
     setBusy(true);
     try {
-      const shrunk = await shrinkImage(file, maxDimension);
+      const shrunk = await shrinkImage(file, maxDimension, format);
       const ext = shrunk.type === "image/png" ? "png" : "webp";
-      const result = await upload(`${name}/image.${ext}`, shrunk, {
+      const result = await upload(`${folder}/${name}.${ext}`, shrunk, {
         access: "public",
         handleUploadUrl: "/api/upload",
         contentType: shrunk.type,

@@ -1,4 +1,5 @@
 import { login } from "./actions";
+import { LOGIN_LOCKOUT_MINUTES } from "@/lib/loginThrottle";
 
 export default async function LoginPage({
   searchParams,
@@ -15,18 +16,26 @@ export default async function LoginPage({
 
         {error && (
           <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2 mb-4">
-            Incorrect email or password.
+            {error === "locked"
+              ? `Too many attempts. Wait ${LOGIN_LOCKOUT_MINUTES} minutes and try again.`
+              : "Incorrect email or password."}
           </p>
         )}
 
         <form action={login} className="space-y-4">
           <label className="block">
             <span className="block text-sm text-neutral-600 mb-1">Email</span>
-            <input name="email" type="email" required className="input" />
+            <input name="email" type="email" required autoComplete="email" className="input" />
           </label>
           <label className="block">
             <span className="block text-sm text-neutral-600 mb-1">Password</span>
-            <input name="password" type="password" required className="input" />
+            <input
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="input"
+            />
           </label>
           <button
             type="submit"

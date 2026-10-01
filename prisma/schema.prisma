@@ -22,11 +22,13 @@ datasource db {
 // BusinessCategory and ProductStatus are plain strings (allowed values
 // enforced in code — see lib/types.ts) rather than native enums, and
 // priceLabels/prices below are JSON-encoded text rather than a native
-// Json column. Both were originally required for SQLite compatibility;
-// now that this runs on Postgres, they *could* become real `enum` and
-// `Json` columns for a cleaner schema — left as plain strings for now to
-// avoid touching working code right before a live demo. Worth revisiting
-// once things have settled.
+// Json column. That's left over from when this ran on SQLite; on Postgres
+// they could become real `enum` and `Json` columns, but changing a column's
+// type needs a data migration, so it's been left alone while things are
+// still moving.
+//
+// Postgres doesn't index foreign keys automatically, so each relation that
+// gets looked up from the "many" side has an explicit @@index below.
 
 model Business {
   id        String   @id @default(cuid())
@@ -45,6 +47,8 @@ model Business {
   logoUrl      String?
   primaryColor String @default("#0D0D0D")
   accentColor  String @default("#C9A24B")
+  // Heading font for guest cards — one of the ids in lib/fontOptions.ts.
+  cardFont     String @default("classic")
 
   // Set once in dashboard settings, shown on every guest card (product,
   // flight) — not a per-product field, since a business only has one
@@ -75,6 +79,20 @@ model Session {
   business   Business @relation(fields: [businessId], references: [id])
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+
+  @@index([businessId])
+}
+
+// One row per failed login, keyed by "email:<address>" and "ip:<address>".
+// Used only to slow down password guessing (lib/loginThrottle.ts); rows
+// older than a day are deleted as new failures come in.
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  key       String
+  createdAt DateTime @default(now())
+
+  @@index([key, createdAt])
+  @@index([createdAt])
 }
 
 model Product {
@@ -110,9 +128,8 @@ model Product {
   // time (same pattern as showAbv above) — e.g. ["Glass", "Bottle"] for a
   // winery, ["Taste", "Pour", "Pack"] for a brewery. `prices` maps each
   // label to its value, e.g. {"Glass": "$12.00", "Bottle": "$38.00"}.
-  // Stored as JSON-encoded text — SQLite's Prisma connector has no native
-  // Json column type (unlike Postgres/MySQL) — parsed/stringified in code,
-  // see lib/json.ts.
+  // Stored as JSON-encoded text (see the note at the top of this file),
+  // parsed/stringified in code — see lib/json.ts.
   priceLabels String? // JSON-encoded string[]
   prices      String? // JSON-encoded Record<string, string>
 
@@ -131,13 +148,17 @@ model Product {
   @@unique([businessId, slug])
 }
 
-// Minimal scan log for the "scans per product" dashboard stat.
-// Kept append-only and intentionally sparse (no guest PII).
+// Minimal view log for the "views per product" dashboard stat — one row per
+// guest page view, skipping bots/link previewers and the business's own
+// visits (see the product guest page). Kept append-only and intentionally
+// sparse (no guest PII).
 model Scan {
   id        String   @id @default(cuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id])
   scannedAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 // A curated, ordered subset of a business's products — e.g. "Reserve
@@ -184,4 +205,5 @@ model FlightItem {
   order     Int     @default(0)
 
   @@unique([flightId, productId])
+  @@index([productId])
 }

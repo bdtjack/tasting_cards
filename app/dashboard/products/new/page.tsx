@@ -2,14 +2,18 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   PRODUCT_TYPE_LABELS,
+  defaultShowAbv,
   getAllowedProductTypes,
   getPriceLabels,
   resolveProductType,
 } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
+import { uploadFolderFor } from "@/lib/blob";
 import ImageUpload from "@/components/ImageUpload";
 import CountedTextarea from "@/components/CountedTextarea";
+import FormError, { NOT_BLANK } from "@/components/FormError";
 import { LIMITS } from "@/lib/validate";
+import { PRODUCT_ERROR_MESSAGES } from "@/lib/formErrors";
 import type { BusinessCategory } from "@/lib/types";
 import { createProduct } from "./actions";
 
@@ -23,12 +27,12 @@ const TYPE_BLURBS = {
 export default async function NewProductPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; error?: string }>;
 }) {
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
-  const { type: requestedType } = await searchParams;
+  const { type: requestedType, error } = await searchParams;
   const productType = resolveProductType(business.category as BusinessCategory, requestedType);
 
   // Every business can add more than one kind of drink (at least its own
@@ -72,10 +76,12 @@ export default async function NewProductPage({
         Fields shown to guests on the tasting card.
       </p>
 
+      <FormError code={error} messages={PRODUCT_ERROR_MESSAGES} />
+
       <form action={createProduct} className="space-y-4">
         <input type="hidden" name="productType" value={productType} />
         <Field label="Product name">
-          <input name="name" maxLength={LIMITS.name} required className="input" />
+          <input name="name" maxLength={LIMITS.name} required {...NOT_BLANK} className="input" />
         </Field>
 
         <div className="grid grid-cols-2 gap-4">
@@ -87,19 +93,20 @@ export default async function NewProductPage({
           </Field>
         </div>
 
-        {/*
-          The proof/ABV field is intentionally always rendered here — the
-          business-level default (hidden for wineries) is applied server-side
-          in actions.ts, not by conditionally hiding this input. A future
-          per-product override control would live here.
-        */}
-        <Field label="Proof / ABV (leave blank if not applicable)">
-          <input name="proofAbv" maxLength={LIMITS.proofAbv} className="input" />
-        </Field>
+        <div>
+          <Field label="Proof / ABV (leave blank if not applicable)">
+            <input name="proofAbv" maxLength={LIMITS.proofAbv} className="input" />
+          </Field>
+          <label className="flex items-center gap-2 mt-2 text-sm text-neutral-600">
+            <input type="checkbox" name="showAbv" defaultChecked={defaultShowAbv(productType)} />
+            Show proof / ABV on the guest card
+          </label>
+        </div>
 
         <ImageUpload
           name="photoUrl"
           label="Photo (optional)"
+          folder={uploadFolderFor(business.slug)}
           initialUrl={null}
           maxDimension={1200}
           help="A bottle, can or cocktail shot. JPG, PNG or WebP."
@@ -128,18 +135,15 @@ export default async function NewProductPage({
           <legend className="text-sm font-medium text-neutral-600 mb-1">Optional</legend>
 
           {/*
-            Price fields are driven by the product type (wine gets
-            Glass/Bottle, spirit gets Oz/Bottle, beer gets
-            Taste/Pour/Pack, cocktail gets a single Price — the owner picks the type first). The label itself is submitted alongside each
-            value so actions.ts can build the {label: value} map without
-            needing to re-derive it — see the hidden input below.
+            Price fields depend on the product type (wine gets Glass/Bottle,
+            spirit gets Oz/Bottle, beer gets Taste/Pour/Pack, cocktail gets a
+            single Price). actions.ts re-derives the same list from the type
+            rather than trusting anything the form sends.
           */}
-          <input type="hidden" name="priceLabels" value={JSON.stringify(priceLabels)} />
           <div className={`grid gap-4 ${priceLabels.length > 1 ? "grid-cols-2" : ""}`}>
             {priceLabels.map((label) => (
               <Field key={label} label={label}>
-                <input name={`price_${label}`}
-                  maxLength={LIMITS.price} className="input" />
+                <input name={`price_${label}`} maxLength={LIMITS.price} className="input" />
               </Field>
             ))}
           </div>

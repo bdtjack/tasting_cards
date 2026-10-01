@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getGuestFlight } from "@/lib/queries";
 import FlightCard from "@/components/FlightCard";
 import BuildYourOwnFlight from "@/components/BuildYourOwnFlight";
 import { recordFlightCompletion } from "./actions";
@@ -13,13 +14,9 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { businessSlug, flightSlug } = await params;
-  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
-  if (!business) return {};
-
-  const flight = await prisma.flight.findUnique({
-    where: { businessId_slug: { businessId: business.id, slug: flightSlug } },
-  });
-  if (!flight) return {};
+  const found = await getGuestFlight(businessSlug, flightSlug);
+  if (!found) return {};
+  const { business, flight } = found;
 
   const title = `${flight.name} — ${business.name}`;
   const description =
@@ -37,14 +34,9 @@ export default async function FlightPage({
 }) {
   const { businessSlug, flightSlug } = await params;
 
-  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
-  if (!business) notFound();
-
-  const flight = await prisma.flight.findUnique({
-    where: { businessId_slug: { businessId: business.id, slug: flightSlug } },
-    include: { items: { include: { product: true }, orderBy: { order: "asc" } } },
-  });
-  if (!flight) notFound();
+  const found = await getGuestFlight(businessSlug, flightSlug);
+  if (!found) notFound();
+  const { business, flight } = found;
 
   const businessProps = {
     slug: business.slug,
@@ -52,6 +44,7 @@ export default async function FlightPage({
     logoUrl: business.logoUrl,
     primaryColor: business.primaryColor,
     accentColor: business.accentColor,
+    cardFont: business.cardFont,
     mailingListLink: business.mailingListLink,
     sharePhrase: business.sharePhrase,
   };
@@ -87,7 +80,11 @@ export default async function FlightPage({
         name: flight.name,
         description: flight.description,
         price: flight.price,
-        items: flight.items.map((item: (typeof flight.items)[number]) => ({
+        // A draft was never published, so guests shouldn't see it even if
+        // it somehow ended up in a flight.
+        items: flight.items
+          .filter((item) => item.product.status !== "DRAFT")
+          .map((item) => ({
           slug: item.product.slug,
           name: item.product.name,
           category: item.product.category,

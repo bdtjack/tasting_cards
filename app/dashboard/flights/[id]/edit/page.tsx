@@ -2,38 +2,53 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
+import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
 import { MAX_SELECTIONS, MIN_SELECTIONS } from "@/lib/types";
 import { updateFlight, deleteFlight } from "./actions";
 import { LIMITS } from "@/lib/validate";
+import { FLIGHT_ERROR_MESSAGES } from "@/lib/formErrors";
+import FlightProductPicker from "@/components/FlightProductPicker";
+import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
+import FormError, { NOT_BLANK } from "@/components/FormError";
+
 
 export default async function EditFlightPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const { id } = await params;
+  const { error } = await searchParams;
 
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
   const flight = await prisma.flight.findUnique({
     where: { id },
-    include: { items: { include: { product: true }, orderBy: { order: "asc" } } },
+    include: { items: { orderBy: { order: "asc" } } },
   });
   if (!flight || flight.businessId !== business.id) {
     notFound();
   }
 
-  const selectedProductIds = new Set(
-    flight.items.map((item: (typeof flight.items)[number]) => item.productId)
-  );
+  const selectedProductIds = flight.items.map((item) => item.productId);
 
+  // Everything published, plus anything already in this flight that has
+  // since been archived — so saving never silently drops it.
   const products = await prisma.product.findMany({
-    where: { businessId: business.id, status: "PUBLISHED" },
+    where: {
+      businessId: business.id,
+      OR: [{ status: "PUBLISHED" }, { id: { in: selectedProductIds }, status: "ARCHIVED" }],
+    },
     orderBy: { name: "asc" },
+    select: { id: true, name: true, category: true, status: true },
   });
 
   const isBuildYourOwn = flight.kind === "BUILD_YOUR_OWN";
+  const guestPath = `/${business.slug}/flights/${flight.slug}`;
+  const qrTarget = `${displayHost(await baseUrlForPage())}${guestPath}`;
 
   return (
     <main className="max-w-lg mx-auto p-8">
@@ -53,12 +68,21 @@ export default async function EditFlightPage({
         </div>
       )}
 
+      <FormError code={error} messages={FLIGHT_ERROR_MESSAGES} />
+
       <form action={updateFlight} className="space-y-4">
         <input type="hidden" name="id" value={flight.id} />
 
         <label className="block">
           <span className="block text-sm text-neutral-600 mb-1">Flight name</span>
-          <input name="name" maxLength={LIMITS.name} required defaultValue={flight.name} className="input" />
+          <input
+            name="name"
+            maxLength={LIMITS.name}
+            required
+            {...NOT_BLANK}
+            defaultValue={flight.name}
+            className="input"
+          />
         </label>
 
         <label className="block">
@@ -66,7 +90,8 @@ export default async function EditFlightPage({
             Description (optional)
           </span>
           <textarea
-            name="description" maxLength={LIMITS.flightDescription}
+            name="description"
+            maxLength={LIMITS.flightDescription}
             rows={2}
             defaultValue={flight.description ?? ""}
             className="input"
@@ -95,7 +120,8 @@ export default async function EditFlightPage({
               Flight price (optional)
             </span>
             <input
-              name="price" maxLength={LIMITS.price}
+              name="price"
+              maxLength={LIMITS.price}
               defaultValue={flight.price ?? ""}
               className="input"
               placeholder="$0.00"
@@ -107,33 +133,15 @@ export default async function EditFlightPage({
           <div className="border-t border-neutral-200 pt-4">
             <p className="text-sm font-medium text-neutral-600 mb-1">Products</p>
             <p className="text-xs text-neutral-500">
-              Guests can choose from all {products.length} of your published
-              products at every step, and can pick the same one more than once.
+              Guests can choose from all{" "}
+              {products.filter((product) => product.status === "PUBLISHED").length} of your
+              published products at every step, and can pick the same one more than once.
             </p>
           </div>
         ) : (
           <div className="border-t border-neutral-200 pt-4">
-            <p className="text-sm font-medium text-neutral-600 mb-1">Products</p>
-            <p className="text-xs text-neutral-500 mb-3">
-              Only published products can be added to a flight.
-            </p>
-            <div className="space-y-2">
-              {products.map((product: (typeof products)[number]) => (
-                <label
-                  key={product.id}
-                  className="flex items-center gap-2.5 text-sm border border-neutral-200 rounded-md px-3 py-2"
-                >
-                  <input
-                    type="checkbox"
-                    name="productIds"
-                    value={product.id}
-                    defaultChecked={selectedProductIds.has(product.id)}
-                  />
-                  <span>{product.name}</span>
-                  <span className="text-neutral-400 text-xs">{product.category}</span>
-                </label>
-              ))}
-            </div>
+            <p className="text-sm font-medium text-neutral-600 mb-3">Products</p>
+            <FlightProductPicker products={products} initialSelectedIds={selectedProductIds} />
           </div>
         )}
 
@@ -155,6 +163,7 @@ export default async function EditFlightPage({
 
       <div className="border-t border-neutral-200 mt-6 pt-6">
         <p className="text-sm font-medium text-neutral-600 mb-1">QR code</p>
+        <p className="text-xs text-neutral-500 mb-3 break-all">Points to {qrTarget}</p>
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -171,7 +180,7 @@ export default async function EditFlightPage({
               Download PNG
             </a>
             <a
-              href={`/${business.slug}/flights/${flight.slug}`}
+              href={guestPath}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-neutral-500 text-center"
@@ -183,12 +192,12 @@ export default async function EditFlightPage({
       </div>
 
       <div className="border-t border-neutral-200 mt-6 pt-6">
-        <form action={deleteFlight}>
-          <input type="hidden" name="id" value={flight.id} />
-          <button type="submit" className="text-sm text-red-600">
-            Delete flight
-          </button>
-        </form>
+        <ConfirmDeleteForm
+          action={deleteFlight}
+          id={flight.id}
+          label="Delete flight"
+          warning={`Delete "${flight.name}"? This can't be undone, and any printed QR code for this flight will stop working.`}
+        />
       </div>
     </main>
   );

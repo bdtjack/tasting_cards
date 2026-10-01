@@ -5,21 +5,26 @@ import { getCurrentBusiness } from "@/lib/auth";
 import { MAX_SELECTIONS, MIN_SELECTIONS } from "@/lib/types";
 import { createFlight, createBuildYourOwnFlight } from "./actions";
 import { LIMITS } from "@/lib/validate";
+import { FLIGHT_ERROR_MESSAGES } from "@/lib/formErrors";
+import FlightProductPicker from "@/components/FlightProductPicker";
+import FormError, { NOT_BLANK } from "@/components/FormError";
+
 
 export default async function NewFlightPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; error?: string }>;
 }) {
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
-  const { type } = await searchParams;
+  const { type, error } = await searchParams;
   const isBuildYourOwn = type === "build-your-own";
 
   const products = await prisma.product.findMany({
     where: { businessId: business.id, status: "PUBLISHED" },
     orderBy: { name: "asc" },
+    select: { id: true, name: true, category: true, status: true },
   });
 
   return (
@@ -54,6 +59,8 @@ export default async function NewFlightPage({
         </Link>
       </div>
 
+      <FormError code={error} messages={FLIGHT_ERROR_MESSAGES} />
+
       <form
         action={isBuildYourOwn ? createBuildYourOwnFlight : createFlight}
         className="space-y-4"
@@ -61,8 +68,10 @@ export default async function NewFlightPage({
         <label className="block">
           <span className="block text-sm text-neutral-600 mb-1">Flight name</span>
           <input
-            name="name" maxLength={LIMITS.name}
+            name="name"
+            maxLength={LIMITS.name}
             required
+            {...NOT_BLANK}
             className="input"
             placeholder={isBuildYourOwn ? "Build Your Own Flight" : "Reserve Flight"}
           />
@@ -73,7 +82,8 @@ export default async function NewFlightPage({
             Description (optional)
           </span>
           <textarea
-            name="description" maxLength={LIMITS.flightDescription}
+            name="description"
+            maxLength={LIMITS.flightDescription}
             rows={2}
             className="input"
             placeholder={
@@ -128,22 +138,8 @@ export default async function NewFlightPage({
                 one before creating a flight.
               </p>
             ) : (
-              <p className="text-xs text-neutral-500 mb-3">
-                Only published products can be added to a flight.
-              </p>
+              <FlightProductPicker products={products} initialSelectedIds={[]} />
             )}
-            <div className="space-y-2">
-              {products.map((product: (typeof products)[number]) => (
-                <label
-                  key={product.id}
-                  className="flex items-center gap-2.5 text-sm border border-neutral-200 rounded-md px-3 py-2"
-                >
-                  <input type="checkbox" name="productIds" value={product.id} />
-                  <span>{product.name}</span>
-                  <span className="text-neutral-400 text-xs">{product.category}</span>
-                </label>
-              ))}
-            </div>
           </div>
         )}
 

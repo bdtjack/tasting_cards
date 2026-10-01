@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useCardShare } from "@/lib/useCardShare";
 import { ordinalWord } from "@/lib/ordinal";
+import { cardPalette } from "@/lib/color";
+import CardHeader from "@/components/CardHeader";
+import { cardFontStyle } from "@/lib/cardFonts";
 
 type Business = {
   slug: string;
@@ -10,6 +13,7 @@ type Business = {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  cardFont: string;
   mailingListLink: string | null;
 };
 
@@ -46,6 +50,7 @@ export default function BuildYourOwnFlight({
   products: PickableProduct[];
   onComplete: () => Promise<void>;
 }) {
+  const p = cardPalette(business.primaryColor, business.accentColor);
   const [picks, setPicks] = useState<PickableProduct[]>([]);
   const isDone = picks.length >= flight.selectionCount;
 
@@ -86,16 +91,16 @@ export default function BuildYourOwnFlight({
     <main className="min-h-screen flex items-start sm:items-center justify-center p-6">
       <div
         className="w-full max-w-lg rounded-xl overflow-hidden"
-        style={{ backgroundColor: business.primaryColor }}
+        style={{ backgroundColor: p.background, ...cardFontStyle(business.cardFont) }}
       >
-        <CardHeader business={business} />
+        <CardHeader name={business.name} logoUrl={business.logoUrl} palette={p} />
 
         <div className="px-6 pt-7 pb-1">
-          <p className="font-serif text-[34px] leading-tight" style={{ color: "#F5F1E8" }}>
+          <p className="font-serif text-[34px] leading-tight" style={{ color: p.heading }}>
             {flight.name}
           </p>
           {flight.description && step === 0 && (
-            <p className="text-base mt-1.5" style={{ color: `${business.accentColor}CC` }}>
+            <p className="text-base mt-1.5" style={{ color: `${p.accentText}CC` }}>
               {flight.description}
             </p>
           )}
@@ -109,16 +114,16 @@ export default function BuildYourOwnFlight({
                 key={i}
                 className="h-1 flex-1 rounded-full"
                 style={{
-                  backgroundColor: i <= step ? business.accentColor : `${business.accentColor}30`,
+                  backgroundColor: i <= step ? p.accent : `${p.accent}30`,
                 }}
               />
             ))}
           </div>
           <div className="flex items-baseline justify-between mt-4">
-            <p className="text-xl font-serif" style={{ color: "#F5F1E8" }}>
+            <p className="text-xl font-serif" style={{ color: p.heading }}>
               {ordinalWord(step)} Selection
             </p>
-            <p className="text-sm" style={{ color: `${business.accentColor}AA` }}>
+            <p className="text-sm" style={{ color: `${p.accentText}AA` }}>
               {step + 1} of {flight.selectionCount}
             </p>
           </div>
@@ -126,7 +131,7 @@ export default function BuildYourOwnFlight({
 
         <div className="px-6 pt-3 pb-2">
           {products.length === 0 ? (
-            <p className="text-base py-3" style={{ color: `${business.accentColor}AA` }}>
+            <p className="text-base py-3" style={{ color: `${p.accentText}AA` }}>
               Nothing is available to pick right now — ask your server what&apos;s pouring.
             </p>
           ) : (
@@ -136,12 +141,12 @@ export default function BuildYourOwnFlight({
                   key={product.id}
                   onClick={() => pick(product)}
                   className="w-full text-left rounded-md px-4 py-3 transition-opacity active:opacity-70"
-                  style={{ backgroundColor: `${business.accentColor}15` }}
+                  style={{ backgroundColor: `${p.accent}15` }}
                 >
-                  <span className="block text-base" style={{ color: "#F5F1E8" }}>
+                  <span className="block text-base" style={{ color: p.heading }}>
                     {product.name}
                   </span>
-                  <span className="block text-sm" style={{ color: `${business.accentColor}AA` }}>
+                  <span className="block text-sm" style={{ color: `${p.accentText}AA` }}>
                     {[product.category, product.subtitle].filter(Boolean).join(" · ")}
                   </span>
                 </button>
@@ -154,14 +159,14 @@ export default function BuildYourOwnFlight({
           <div className="px-6 pt-4 pb-2">
             <p
               className="text-xs tracking-wider uppercase mb-2"
-              style={{ color: business.accentColor }}
+              style={{ color: p.accentText }}
             >
               Your picks so far
             </p>
             <ol className="space-y-1">
               {picks.map((product, i) => (
-                <li key={i} className="text-sm flex gap-2" style={{ color: "#E8DFC8" }}>
-                  <span style={{ color: business.accentColor }}>{i + 1}.</span>
+                <li key={i} className="text-sm flex gap-2" style={{ color: p.body }}>
+                  <span style={{ color: p.accentText }}>{i + 1}.</span>
                   {product.name}
                 </li>
               ))}
@@ -175,14 +180,14 @@ export default function BuildYourOwnFlight({
               <button
                 onClick={() => setPicks((current) => current.slice(0, -1))}
                 className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-                style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+                style={{ borderColor: `${p.accent}80`, color: p.accentText }}
               >
                 Back
               </button>
               <button
                 onClick={() => setPicks([])}
                 className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-                style={{ borderColor: `${business.accentColor}40`, color: `${business.accentColor}AA` }}
+                style={{ borderColor: `${p.accent}40`, color: `${p.accentText}AA` }}
               >
                 Start over
               </button>
@@ -207,6 +212,7 @@ function BuiltFlightCard({
   onChangeLastPick: () => void;
   onStartOver: () => void;
 }) {
+  const p = cardPalette(business.primaryColor, business.accentColor);
   const shareText = `Look at the flight I just built at ${business.name}`;
 
   // Mounted only once the flight is complete, so the image the hook
@@ -223,15 +229,15 @@ function BuiltFlightCard({
       <div
         ref={cardRef}
         className="w-full max-w-lg rounded-xl overflow-hidden"
-        style={{ backgroundColor: business.primaryColor }}
+        style={{ backgroundColor: p.background, ...cardFontStyle(business.cardFont) }}
       >
-        <CardHeader business={business} />
+        <CardHeader name={business.name} logoUrl={business.logoUrl} palette={p} />
 
         <div className="px-6 pt-7 pb-1">
-          <p className="text-xs tracking-wider uppercase" style={{ color: business.accentColor }}>
+          <p className="text-xs tracking-wider uppercase" style={{ color: p.accentText }}>
             My flight
           </p>
-          <p className="font-serif text-[34px] leading-tight mt-1" style={{ color: "#F5F1E8" }}>
+          <p className="font-serif text-[34px] leading-tight mt-1" style={{ color: p.heading }}>
             {flight.name}
           </p>
         </div>
@@ -239,7 +245,7 @@ function BuiltFlightCard({
         <div className="px-6 pb-1 pt-4">
           <div
             className="h-px mb-2"
-            style={{ background: `linear-gradient(90deg, ${business.accentColor}, transparent)` }}
+            style={{ background: `linear-gradient(90deg, ${p.accent}, transparent)` }}
           />
         </div>
 
@@ -249,19 +255,19 @@ function BuiltFlightCard({
               <div
                 key={i}
                 className={`flex items-center gap-4 py-3 ${i > 0 ? "border-t" : ""}`}
-                style={{ borderColor: `${business.accentColor}25` }}
+                style={{ borderColor: `${p.accent}25` }}
               >
                 <span
                   className="font-serif text-2xl w-6 text-center flex-shrink-0"
-                  style={{ color: business.accentColor }}
+                  style={{ color: p.accentText }}
                 >
                   {i + 1}
                 </span>
                 <span>
-                  <span className="block text-base" style={{ color: "#F5F1E8" }}>
+                  <span className="block text-base" style={{ color: p.heading }}>
                     {product.name}
                   </span>
-                  <span className="block text-sm" style={{ color: `${business.accentColor}AA` }}>
+                  <span className="block text-sm" style={{ color: `${p.accentText}AA` }}>
                     {[product.category, product.subtitle].filter(Boolean).join(" · ")}
                   </span>
                 </span>
@@ -273,19 +279,21 @@ function BuiltFlightCard({
         {flight.price && (
           <div
             className="mx-6 mt-2 pt-3 border-t flex items-baseline gap-2"
-            style={{ borderColor: `${business.accentColor}30` }}
+            style={{ borderColor: `${p.accent}30` }}
           >
-            <span className="text-base" style={{ color: business.accentColor }}>
+            <span className="text-base" style={{ color: p.accentText }}>
               Flight
             </span>
-            <span className="font-serif text-base text-white">{flight.price}</span>
+            <span className="font-serif text-base" style={{ color: p.heading }}>
+              {flight.price}
+            </span>
           </div>
         )}
 
         {/* Part of the saved/shared image on purpose, so the line travels
             with the picture however the guest shares it. */}
         <div className="px-6 pt-5 pb-6">
-          <p className="font-serif italic text-lg text-center" style={{ color: "#E8DFC8" }}>
+          <p className="font-serif italic text-lg text-center" style={{ color: p.body }}>
             {shareText}
           </p>
         </div>
@@ -295,14 +303,14 @@ function BuiltFlightCard({
             onClick={handleSaveCard}
             disabled={saving}
             className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium disabled:opacity-60"
-            style={{ backgroundColor: business.accentColor, color: "#0D0D0D" }}
+            style={{ backgroundColor: p.accent, color: p.onAccent }}
           >
             {saving ? "Saving…" : "Save card"}
           </button>
           <button
             onClick={handleShare}
             className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-            style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+            style={{ borderColor: `${p.accent}80`, color: p.accentText }}
           >
             Share
           </button>
@@ -312,14 +320,14 @@ function BuiltFlightCard({
           <button
             onClick={onChangeLastPick}
             className="flex-1 text-center text-sm px-4 py-2.5 rounded-md border"
-            style={{ borderColor: `${business.accentColor}40`, color: `${business.accentColor}AA` }}
+            style={{ borderColor: `${p.accent}40`, color: `${p.accentText}AA` }}
           >
             Back
           </button>
           <button
             onClick={onStartOver}
             className="flex-1 text-center text-sm px-4 py-2.5 rounded-md border"
-            style={{ borderColor: `${business.accentColor}40`, color: `${business.accentColor}AA` }}
+            style={{ borderColor: `${p.accent}40`, color: `${p.accentText}AA` }}
           >
             Start over
           </button>
@@ -332,7 +340,7 @@ function BuiltFlightCard({
               target="_blank"
               rel="noopener noreferrer"
               className="block text-center text-sm"
-              style={{ color: business.accentColor }}
+              style={{ color: p.accentText }}
             >
               Join the list
             </a>
@@ -340,29 +348,5 @@ function BuiltFlightCard({
         )}
       </div>
     </main>
-  );
-}
-
-function CardHeader({ business }: { business: Business }) {
-  return (
-    <div
-      className="px-6 py-5 flex items-center gap-3 border-b"
-      style={{ borderColor: `${business.accentColor}40` }}
-    >
-      {business.logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={business.logoUrl} alt="" className="w-9 h-9 rounded-full" crossOrigin="anonymous" />
-      ) : (
-        <div
-          className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-serif"
-          style={{ borderColor: business.accentColor, color: business.accentColor }}
-        >
-          {business.name.slice(0, 2).toUpperCase()}
-        </div>
-      )}
-      <span className="text-sm tracking-wider uppercase" style={{ color: business.accentColor }}>
-        {business.name}
-      </span>
-    </div>
   );
 }

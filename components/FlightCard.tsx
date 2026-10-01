@@ -2,6 +2,9 @@
 
 import { useCardShare } from "@/lib/useCardShare";
 import { buildShareCaption } from "@/lib/shareCaption";
+import { cardPalette } from "@/lib/color";
+import CardHeader from "@/components/CardHeader";
+import { cardFontStyle } from "@/lib/cardFonts";
 
 type Business = {
   slug: string;
@@ -9,6 +12,7 @@ type Business = {
   logoUrl: string | null;
   primaryColor: string;
   accentColor: string;
+  cardFont: string;
   mailingListLink: string | null;
   sharePhrase: string | null;
 };
@@ -29,6 +33,8 @@ type Flight = {
 };
 
 export default function FlightCard({ business, flight }: { business: Business; flight: Flight }) {
+  const p = cardPalette(business.primaryColor, business.accentColor);
+
   const shareCaption = buildShareCaption({
     sharePhrase: business.sharePhrase,
     itemName: flight.name,
@@ -48,34 +54,16 @@ export default function FlightCard({ business, flight }: { business: Business; f
       <div
         ref={cardRef}
         className="w-full max-w-lg rounded-xl overflow-hidden"
-        style={{ backgroundColor: business.primaryColor }}
+        style={{ backgroundColor: p.background, ...cardFontStyle(business.cardFont) }}
       >
-        <div
-          className="px-6 py-5 flex items-center gap-3 border-b"
-          style={{ borderColor: `${business.accentColor}40` }}
-        >
-          {business.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.logoUrl} alt="" className="w-9 h-9 rounded-full" crossOrigin="anonymous" />
-          ) : (
-            <div
-              className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-serif"
-              style={{ borderColor: business.accentColor, color: business.accentColor }}
-            >
-              {business.name.slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <span className="text-sm tracking-wider uppercase" style={{ color: business.accentColor }}>
-            {business.name}
-          </span>
-        </div>
+        <CardHeader name={business.name} logoUrl={business.logoUrl} palette={p} />
 
         <div className="px-6 pt-7 pb-1">
-          <p className="font-serif text-[34px] leading-tight" style={{ color: "#F5F1E8" }}>
+          <p className="font-serif text-[34px] leading-tight" style={{ color: p.heading }}>
             {flight.name}
           </p>
           {flight.description && (
-            <p className="text-base mt-1.5" style={{ color: `${business.accentColor}CC` }}>
+            <p className="text-base mt-1.5" style={{ color: `${p.accentText}CC` }}>
               {flight.description}
             </p>
           )}
@@ -84,35 +72,36 @@ export default function FlightCard({ business, flight }: { business: Business; f
         <div className="px-6 pb-1 pt-4">
           <div
             className="h-px mb-4"
-            style={{ background: `linear-gradient(90deg, ${business.accentColor}, transparent)` }}
+            style={{ background: `linear-gradient(90deg, ${p.accent}, transparent)` }}
           />
         </div>
 
         <div className="px-6 pb-2">
           {flight.items.length === 0 ? (
-            <p className="text-base" style={{ color: `${business.accentColor}AA` }}>
+            <p className="text-base" style={{ color: `${p.accentText}AA` }}>
               This flight doesn&apos;t have any products yet.
             </p>
           ) : (
-            <div className="divide-y" style={{ borderColor: `${business.accentColor}20` }}>
-              {flight.items.map((product) => (
+            <div>
+              {flight.items.map((product, i) => (
                 <a
                   key={product.slug}
                   href={`/${business.slug}/${product.slug}`}
-                  className="flex items-center justify-between gap-3 py-3"
+                  className={`flex items-center justify-between gap-3 py-3 ${i > 0 ? "border-t" : ""}`}
+                  style={{ borderColor: `${p.accent}20` }}
                 >
                   <span>
-                    <span className="block text-base" style={{ color: "#F5F1E8" }}>
+                    <span className="block text-base" style={{ color: p.heading }}>
                       {product.name}
                     </span>
-                    <span className="block text-sm" style={{ color: `${business.accentColor}AA` }}>
+                    <span className="block text-sm" style={{ color: `${p.accentText}AA` }}>
                       {[product.category, product.subtitle].filter(Boolean).join(" · ")}
                     </span>
                   </span>
                   {product.status === "ARCHIVED" && (
                     <span
                       className="text-xs px-2.5 py-1 rounded-md flex-shrink-0"
-                      style={{ backgroundColor: `${business.accentColor}20`, color: business.accentColor }}
+                      style={{ backgroundColor: `${p.accent}20`, color: p.accentText }}
                     >
                       Sold out
                     </span>
@@ -126,12 +115,14 @@ export default function FlightCard({ business, flight }: { business: Business; f
         {flight.price && (
           <div
             className="mx-6 mt-2 pt-3 border-t flex items-baseline gap-2"
-            style={{ borderColor: `${business.accentColor}30` }}
+            style={{ borderColor: `${p.accent}30` }}
           >
-            <span className="text-base" style={{ color: business.accentColor }}>
+            <span className="text-base" style={{ color: p.accentText }}>
               Flight
             </span>
-            <span className="font-serif text-base text-white">{flight.price}</span>
+            <span className="font-serif text-base" style={{ color: p.heading }}>
+              {flight.price}
+            </span>
           </div>
         )}
 
@@ -139,7 +130,7 @@ export default function FlightCard({ business, flight }: { business: Business; f
           <div className="px-6 pt-4">
             <p
               className="font-serif italic text-sm text-center"
-              style={{ color: `${business.accentColor}CC` }}
+              style={{ color: `${p.accentText}CC` }}
             >
               {shareCaption}
             </p>
@@ -152,7 +143,7 @@ export default function FlightCard({ business, flight }: { business: Business; f
             onClick={handleSaveCard}
             disabled={saving}
             className="w-full text-center text-sm px-4 py-2.5 rounded-md font-medium disabled:opacity-60"
-            style={{ backgroundColor: business.accentColor, color: "#0D0D0D" }}
+            style={{ backgroundColor: p.accent, color: p.onAccent }}
           >
             {saving ? "Saving…" : "Save card"}
           </button>
@@ -165,7 +156,7 @@ export default function FlightCard({ business, flight }: { business: Business; f
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-              style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+              style={{ borderColor: `${p.accent}80`, color: p.accentText }}
             >
               Join the list
             </a>
@@ -173,7 +164,7 @@ export default function FlightCard({ business, flight }: { business: Business; f
           <button
             onClick={handleShare}
             className="flex-1 text-center text-sm px-4 py-2.5 rounded-md font-medium border"
-            style={{ borderColor: `${business.accentColor}80`, color: business.accentColor }}
+            style={{ borderColor: `${p.accent}80`, color: p.accentText }}
           >
             {copied ? "Link copied" : "Share"}
           </button>

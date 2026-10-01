@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
+import { after } from "next/server";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { parseJsonField } from "@/lib/json";
+import { getGuestProduct } from "@/lib/queries";
+import { getCurrentBusiness } from "@/lib/auth";
+import { isLikelyBot } from "@/lib/bots";
 import GuestCard from "@/components/GuestCard";
 
 type Params = { businessSlug: string; productSlug: string };
@@ -18,13 +23,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { businessSlug, productSlug } = await params;
 
-  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
-  if (!business) return {};
-
-  const product = await prisma.product.findUnique({
-    where: { businessId_slug: { businessId: business.id, slug: productSlug } },
-  });
-  if (!product || product.status === "DRAFT") return {};
+  const found = await getGuestProduct(businessSlug, productSlug);
+  if (!found || found.product.status === "DRAFT") return {};
+  const { business, product } = found;
 
   const title = `${product.name} — ${business.name}`;
   const description =
@@ -51,21 +52,27 @@ export default async function GuestCardPage({
 }) {
   const { businessSlug, productSlug } = await params;
 
-  const business = await prisma.business.findUnique({
-    where: { slug: businessSlug },
-  });
-  if (!business) notFound();
-
-  const product = await prisma.product.findUnique({
-    where: { businessId_slug: { businessId: business.id, slug: productSlug } },
-  });
+  const found = await getGuestProduct(businessSlug, productSlug);
   // A product in DRAFT was never published, so it should behave like it
   // doesn't exist to a guest, same as a 404.
-  if (!product || product.status === "DRAFT") notFound();
+  if (!found || found.product.status === "DRAFT") notFound();
+  const { business, product } = found;
 
-  // Fire-and-forget scan log. Errors here should never break the guest's
-  // page — analytics is a nice-to-have, not a dependency for rendering.
-  prisma.scan.create({ data: { productId: product.id } }).catch(() => {});
+  // View log for the dashboard count. Skips link-preview bots, browser
+  // prefetches, and the business's own visits (e.g. "View guest card"
+  // while logged in), so the number reflects guests.
+  const h = await headers();
+  const isPrefetch =
+    h.get("next-router-prefetch") !== null ||
+    h.get("purpose") === "prefetch" ||
+    h.get("sec-purpose")?.includes("prefetch");
+  const viewer = await getCurrentBusiness();
+  if (!isPrefetch && !isLikelyBot(h.get("user-agent")) && viewer?.id !== business.id) {
+    // after() runs once the page has been sent. A plain un-awaited promise
+    // can be cut off on Vercel when the function finishes, silently losing
+    // the count. Errors are swallowed — analytics must never break the page.
+    after(() => prisma.scan.create({ data: { productId: product.id } }).catch(() => {}));
+  }
 
   return (
     <GuestCard
@@ -74,6 +81,7 @@ export default async function GuestCardPage({
         logoUrl: business.logoUrl,
         primaryColor: business.primaryColor,
         accentColor: business.accentColor,
+        cardFont: business.cardFont,
         mailingListLink: business.mailingListLink,
         sharePhrase: business.sharePhrase,
       }}

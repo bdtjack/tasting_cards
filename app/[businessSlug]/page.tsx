@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getBusinessBySlug } from "@/lib/queries";
+import { cardPalette } from "@/lib/color";
+import CardHeader from "@/components/CardHeader";
+import { cardFontStyle } from "@/lib/cardFonts";
 
 type Params = { businessSlug: string };
 
@@ -10,7 +14,7 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { businessSlug } = await params;
-  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
+  const business = await getBusinessBySlug(businessSlug);
   if (!business) return {};
 
   const title = `${business.name} — Menu`;
@@ -25,82 +29,77 @@ export default async function MenuPage({
 }) {
   const { businessSlug } = await params;
 
-  const business = await prisma.business.findUnique({ where: { slug: businessSlug } });
+  const business = await getBusinessBySlug(businessSlug);
   if (!business) notFound();
 
-  const [products, flights] = await Promise.all([
+  const [products, allFlights] = await Promise.all([
     prisma.product.findMany({
       where: { businessId: business.id, status: { in: ["PUBLISHED", "ARCHIVED"] } },
-      orderBy: [{ status: "asc" }, { name: "asc" }], // PUBLISHED sorts before ARCHIVED
+      orderBy: [{ status: "desc" }, { name: "asc" }], // PUBLISHED sorts before ARCHIVED
     }),
     prisma.flight.findMany({
       where: { businessId: business.id },
       orderBy: { createdAt: "asc" },
+      include: { items: { select: { product: { select: { status: true } } } } },
     }),
   ]);
+
+  // Only list flights a guest can actually order: a preset flight needs at
+  // least one product still available, and build-your-own needs something
+  // published to pick from. (Their own pages and QR codes keep working.)
+  const hasPublished = products.some((product) => product.status === "PUBLISHED");
+  const flights = allFlights.filter((flight) =>
+    flight.kind === "BUILD_YOUR_OWN"
+      ? hasPublished
+      : flight.items.some((item) => item.product.status === "PUBLISHED")
+  );
+
+  const p = cardPalette(business.primaryColor, business.accentColor);
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <div
         className="w-full max-w-lg rounded-xl overflow-hidden"
-        style={{ backgroundColor: business.primaryColor }}
+        style={{ backgroundColor: p.background, ...cardFontStyle(business.cardFont) }}
       >
-        <div
-          className="px-6 py-5 flex items-center gap-3 border-b"
-          style={{ borderColor: `${business.accentColor}40` }}
-        >
-          {business.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.logoUrl} alt="" className="w-9 h-9 rounded-full" />
-          ) : (
-            <div
-              className="w-9 h-9 rounded-full border flex items-center justify-center text-xs font-serif"
-              style={{ borderColor: business.accentColor, color: business.accentColor }}
-            >
-              {business.name.slice(0, 2).toUpperCase()}
-            </div>
-          )}
-          <span className="text-sm tracking-wider uppercase" style={{ color: business.accentColor }}>
-            {business.name}
-          </span>
-        </div>
+        <CardHeader name={business.name} logoUrl={business.logoUrl} palette={p} />
 
         <div className="px-6 pt-7 pb-2">
-          <p className="font-serif text-[34px]" style={{ color: "#F5F1E8" }}>
+          <p className="font-serif text-[34px]" style={{ color: p.heading }}>
             Menu
           </p>
         </div>
 
         {flights.length > 0 && (
           <div className="px-6 pb-5">
-            <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: business.accentColor }}>
+            <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: p.accentText }}>
               Tasting flights
             </p>
             <div className="space-y-2">
-              {flights.map((flight: (typeof flights)[number]) => (
+              {flights.map((flight) => (
                 <a
                   key={flight.id}
                   href={`/${business.slug}/flights/${flight.slug}`}
                   className="block rounded-md px-4 py-2.5"
-                  style={{ backgroundColor: `${business.accentColor}15` }}
+                  style={{ backgroundColor: `${p.accent}15` }}
                 >
                   <span className="flex items-baseline justify-between gap-3">
-                    <span className="text-base font-medium" style={{ color: "#F5F1E8" }}>
+                    <span className="text-base font-medium" style={{ color: p.heading }}>
                       {flight.name}
                     </span>
                     {flight.price && (
-                      <span className="font-serif text-sm text-white flex-shrink-0">
+                      <span className="font-serif text-sm flex-shrink-0" style={{ color: p.heading }}>
                         {flight.price}
                       </span>
                     )}
                   </span>
                   {flight.kind === "BUILD_YOUR_OWN" && (
-                    <span className="block text-xs tracking-wider uppercase mt-1" style={{ color: business.accentColor }}>
+                    <span className="block text-xs tracking-wider uppercase mt-1" style={{ color: p.accentText }}>
                       Build your own · pick {flight.selectionCount ?? 4}
                     </span>
                   )}
                   {flight.description && (
-                    <span className="block text-sm mt-1" style={{ color: `${business.accentColor}CC` }}>
+                    <span className="block text-sm mt-1" style={{ color: `${p.accentText}CC` }}>
                       {flight.description}
                     </span>
                   )}
@@ -111,36 +110,34 @@ export default async function MenuPage({
         )}
 
         <div className="px-6 pb-6">
-          <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: business.accentColor }}>
+          <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: p.accentText }}>
             All products
           </p>
           {products.length === 0 ? (
-            <p className="text-sm" style={{ color: `${business.accentColor}AA` }}>
+            <p className="text-sm" style={{ color: `${p.accentText}AA` }}>
               Nothing on the menu yet.
             </p>
           ) : (
-            <div
-              className="divide-y"
-              style={{ borderColor: `${business.accentColor}20` }}
-            >
-              {products.map((product: (typeof products)[number]) => (
+            <div>
+              {products.map((product, i) => (
                 <a
                   key={product.id}
                   href={`/${business.slug}/${product.slug}`}
-                  className="flex items-center justify-between gap-3 py-3"
+                  className={`flex items-center justify-between gap-3 py-3 ${i > 0 ? "border-t" : ""}`}
+                  style={{ borderColor: `${p.accent}20` }}
                 >
                   <span>
-                    <span className="block text-base" style={{ color: "#F5F1E8" }}>
+                    <span className="block text-base" style={{ color: p.heading }}>
                       {product.name}
                     </span>
-                    <span className="block text-sm" style={{ color: `${business.accentColor}AA` }}>
+                    <span className="block text-sm" style={{ color: `${p.accentText}AA` }}>
                       {[product.category, product.subtitle].filter(Boolean).join(" · ")}
                     </span>
                   </span>
                   {product.status === "ARCHIVED" && (
                     <span
                       className="text-xs px-2.5 py-1 rounded-md flex-shrink-0"
-                      style={{ backgroundColor: `${business.accentColor}20`, color: business.accentColor }}
+                      style={{ backgroundColor: `${p.accent}20`, color: p.accentText }}
                     >
                       Sold out
                     </span>

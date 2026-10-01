@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { productSlugify, slugify } from "./slug";
 
@@ -35,14 +36,38 @@ export async function uniqueFlightSlug(businessId: string, name: string): Promis
 }
 
 /**
- * Keeps only product ids that belong to this business, de-duplicated and
- * in the order submitted. Without this, a hand-edited flight form could
- * attach another business's product, or crash on a repeated id.
+ * Runs `create` with a freshly picked slug, retrying with a new one if
+ * another request grabbed the same slug in the moment between picking and
+ * saving (the database's unique constraint is the final word). Rare, but
+ * otherwise it shows an error page.
+ */
+export async function createWithFreshSlug<T>(
+  pickSlug: () => Promise<string>,
+  create: (slug: string) => Promise<T>
+): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    const slug = await pickSlug();
+    try {
+      return await create(slug);
+    } catch (err) {
+      const slugTaken =
+        err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
+      if (!slugTaken || attempt >= 3) throw err;
+    }
+  }
+}
+
+/**
+ * Keeps only product ids that belong to this business and have been
+ * published (archived ones can stay in a flight they're already in), de-
+ * duplicated and in the order submitted. Without this, a hand-edited
+ * flight form could attach another business's product or an unpublished
+ * draft, or crash on a repeated id.
  */
 export async function ownedProductIds(businessId: string, ids: string[]): Promise<string[]> {
   const unique = Array.from(new Set(ids));
   const owned = await prisma.product.findMany({
-    where: { businessId, id: { in: unique } },
+    where: { businessId, id: { in: unique }, status: { not: "DRAFT" } },
     select: { id: true },
   });
   const ownedSet = new Set(owned.map((p) => p.id));

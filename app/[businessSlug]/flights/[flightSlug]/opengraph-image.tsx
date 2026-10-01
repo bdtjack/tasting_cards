@@ -1,6 +1,6 @@
-import { ImageResponse } from "next/og";
 import { prisma } from "@/lib/prisma";
-import { OG_SIZE, fallbackOgImage, LogoBadge, ogOptions } from "@/lib/og";
+import { cardPalette } from "@/lib/color";
+import { OG_SIZE, fallbackOgImage, LogoBadge, loadLogoForOg, renderOgImage } from "@/lib/og";
 
 export const size = OG_SIZE;
 export const contentType = "image/png";
@@ -14,71 +14,58 @@ export default async function Image({ params }: { params: Promise<Params> }) {
   const flight = business
     ? await prisma.flight.findUnique({
         where: { businessId_slug: { businessId: business.id, slug: flightSlug } },
-        include: { _count: { select: { items: true } } },
+        include: { _count: { select: { items: { where: { product: { status: { not: "DRAFT" } } } } } } },
       })
     : null;
 
   if (!business || !flight) return fallbackOgImage();
 
-  const options = await ogOptions();
+  const p = cardPalette(business.primaryColor, business.accentColor);
+  const logoSrc = await loadLogoForOg(business.logoUrl);
+  const itemCount = flight._count.items;
 
-  try {
-    return new ImageResponse(
-      (
+  return renderOgImage(
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        padding: 80,
+        background: p.background,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <LogoBadge logoSrc={logoSrc} name={business.name} color={p.accentText} />
+        <span style={{ color: p.accentText, fontSize: 24, letterSpacing: 2 }}>
+          {business.name.toUpperCase()}
+        </span>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", marginTop: 64 }}>
+        <span style={{ fontFamily: "Serif", color: p.heading, fontSize: 84 }}>{flight.name}</span>
+        <span style={{ color: p.accentText, fontSize: 28, marginTop: 16 }}>
+          {flight.kind === "BUILD_YOUR_OWN"
+            ? `Build your own · ${flight.selectionCount ?? 4} selections`
+            : `${itemCount} tasting${itemCount === 1 ? "" : "s"}`}
+        </span>
         <div
           style={{
-            width: "100%",
-            height: "100%",
             display: "flex",
-            flexDirection: "column",
-            padding: 80,
-            background: business.primaryColor,
+            height: 2,
+            width: 360,
+            marginTop: 28,
+            backgroundImage: `linear-gradient(90deg, ${p.accent}, transparent)`,
           }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <LogoBadge
-              logoUrl={business.logoUrl}
-              name={business.name}
-              accentColor={business.accentColor}
-            />
-            <span style={{ color: business.accentColor, fontSize: 24, letterSpacing: 2 }}>
-              {business.name.toUpperCase()}
-            </span>
-          </div>
+        />
+      </div>
 
-          <div style={{ display: "flex", flexDirection: "column", marginTop: 64 }}>
-            <span style={{ fontFamily: "Serif", color: "#F5F1E8", fontSize: 84 }}>
-              {flight.name}
-            </span>
-            <span style={{ color: business.accentColor, fontSize: 28, marginTop: 16 }}>
-              {flight.kind === "BUILD_YOUR_OWN"
-                ? `Build your own · ${flight.selectionCount ?? 4} selections`
-                : `${flight._count.items} tasting${flight._count.items === 1 ? "" : "s"}`}
-            </span>
-            <div
-              style={{
-                display: "flex",
-                height: 2,
-                width: 360,
-                marginTop: 28,
-                backgroundImage: `linear-gradient(90deg, ${business.accentColor}, transparent)`,
-              }}
-            />
-          </div>
-
-          {flight.description && (
-            <div style={{ display: "flex", marginTop: 40 }}>
-              <span style={{ color: "#E8DFC8", fontSize: 30, maxWidth: 900 }}>
-                {flight.description}
-              </span>
-            </div>
-          )}
+      {flight.description && (
+        <div style={{ display: "flex", marginTop: 40 }}>
+          <span style={{ color: p.body, fontSize: 30, maxWidth: 900 }}>{flight.description}</span>
         </div>
-      ),
-      options
-    );
-  } catch (err) {
-    console.error("OG image generation failed, falling back:", err);
-    return fallbackOgImage();
-  }
+      )}
+    </div>,
+    business.cardFont
+  );
 }
