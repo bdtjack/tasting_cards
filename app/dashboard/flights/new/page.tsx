@@ -7,6 +7,8 @@ import { createFlight, createBuildYourOwnFlight } from "./actions";
 import { LIMITS } from "@/lib/validate";
 import { FLIGHT_ERROR_MESSAGES } from "@/lib/formErrors";
 import FlightProductPicker from "@/components/FlightProductPicker";
+import { PICKER_PRODUCT_SELECT, toPickerProducts } from "@/lib/menuGroups";
+import type { BusinessCategory } from "@/lib/types";
 import FormError, { NOT_BLANK } from "@/components/FormError";
 
 
@@ -24,8 +26,11 @@ export default async function NewFlightPage({
   const products = await prisma.product.findMany({
     where: { businessId: business.id, status: "PUBLISHED" },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, category: true, status: true },
+    select: PICKER_PRODUCT_SELECT,
   });
+  // Grouped like the guest menu (Wine → Red / White …) so it's easy to see
+  // what's available while building the flight.
+  const pickerProducts = toPickerProducts(products, business.category as BusinessCategory);
 
   return (
     <main className="max-w-lg mx-auto p-8">
@@ -138,7 +143,7 @@ export default async function NewFlightPage({
                 one before creating a flight.
               </p>
             ) : (
-              <FlightProductPicker products={products} initialSelectedIds={[]} />
+              <FlightProductPicker products={pickerProducts} initialSelectedIds={[]} />
             )}
           </div>
         )}

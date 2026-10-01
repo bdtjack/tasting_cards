@@ -1,8 +1,11 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
 import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
+import { groupProductsForMenu } from "@/lib/menuGroups";
+import type { BusinessCategory } from "@/lib/types";
 
 const STATUS_STYLES: Record<string, string> = {
   PUBLISHED: "bg-green-100 text-green-800",
@@ -17,9 +20,14 @@ export default async function DashboardPage() {
   const business = await prisma.business.findUniqueOrThrow({
     where: { id: currentBusiness.id },
     include: {
-      products: { orderBy: { createdAt: "desc" }, include: { _count: { select: { scans: true } } } },
+      products: { orderBy: { name: "asc" }, include: { _count: { select: { scans: true } } } },
     },
   });
+
+  // Grouped exactly like the guest menu (Wine → Red / White …, Spirits →
+  // Whiskey / Gin …), alphabetical within each group. Drafts sit alongside
+  // published products in the group they'll appear in once published.
+  const sections = groupProductsForMenu(business.products, business.category as BusinessCategory);
 
   const menuQrTarget = `${displayHost(await baseUrlForPage())}/${business.slug}`;
 
@@ -78,40 +86,65 @@ export default async function DashboardPage() {
           </Link>
         </div>
       ) : (
-        <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-200 bg-white">
-          <div className="flex items-center gap-4 px-4 py-2 text-xs text-neutral-400">
-            <span className="flex-1">Product</span>
-            <span className="w-20 text-center">Status</span>
-            <span
-              className="w-12 text-right"
-              title="Guest page views — not counting link-preview bots or your own visits while logged in"
-            >
-              Views
-            </span>
-            <span className="w-[52px]" />
+        <div>
+          <div className="space-y-8">
+            {sections.map((section) => (
+              <section key={section.key}>
+                {/* Section name on the left; column labels lined up with the rows below. */}
+                <div className="flex items-end gap-4 px-4 mb-2">
+                  <h2 className="flex-1 min-w-0">
+                    <span className="text-base font-medium text-neutral-900">{section.label}</span>
+                    <span className="text-xs text-neutral-400 ml-2">
+                      {section.count} product{section.count === 1 ? "" : "s"}
+                    </span>
+                  </h2>
+                  <span className="w-20 text-center text-xs text-neutral-400">Status</span>
+                  <span
+                    className="w-12 text-right text-xs text-neutral-400"
+                    title="Guest page views — not counting link-preview bots or your own visits while logged in"
+                  >
+                    Views
+                  </span>
+                  <span className="w-[52px]" />
+                </div>
+                <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-200 bg-white overflow-hidden">
+                  {section.groups.map((group) => (
+                    <Fragment key={group.key}>
+                      {group.label && (
+                        <div className="px-4 py-1.5 bg-neutral-50 text-[11px] uppercase tracking-wider text-neutral-500">
+                          {group.label}
+                        </div>
+                      )}
+                      {group.products.map((product) => (
+                        <div key={product.id} className="flex items-center gap-4 p-4">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm">{product.name}</p>
+                            <p className="text-xs text-neutral-500">
+                              {[product.category, product.subtitle].filter(Boolean).join(" · ")}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-xs w-20 text-center py-1 rounded-md ${STATUS_STYLES[product.status]}`}
+                          >
+                            {product.status.charAt(0) + product.status.slice(1).toLowerCase()}
+                          </span>
+                          <span className="text-sm text-neutral-500 w-12 text-right">
+                            {product.status === "DRAFT" ? "—" : product._count.scans}
+                          </span>
+                          <Link
+                            href={`/dashboard/products/${product.id}/edit`}
+                            className="text-sm px-3 py-1.5 border border-neutral-300 rounded-md"
+                          >
+                            Edit
+                          </Link>
+                        </div>
+                      ))}
+                    </Fragment>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
-          {business.products.map((product: (typeof business.products)[number]) => (
-            <div key={product.id} className="flex items-center gap-4 p-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{product.name}</p>
-                <p className="text-xs text-neutral-500">{product.category}</p>
-              </div>
-              <span
-                className={`text-xs w-20 text-center py-1 rounded-md ${STATUS_STYLES[product.status]}`}
-              >
-                {product.status.charAt(0) + product.status.slice(1).toLowerCase()}
-              </span>
-              <span className="text-sm text-neutral-500 w-12 text-right">
-                {product.status === "DRAFT" ? "—" : product._count.scans}
-              </span>
-              <Link
-                href={`/dashboard/products/${product.id}/edit`}
-                className="text-sm px-3 py-1.5 border border-neutral-300 rounded-md"
-              >
-                Edit
-              </Link>
-            </div>
-          ))}
         </div>
       )}
     </main>

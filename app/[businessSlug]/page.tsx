@@ -5,8 +5,7 @@ import { getBusinessBySlug } from "@/lib/queries";
 import { cardPalette } from "@/lib/color";
 import CardHeader from "@/components/CardHeader";
 import { cardFontStyle } from "@/lib/cardFonts";
-import { MENU_SECTION_LABELS, inferProductType, menuSectionOrder } from "@/lib/fields";
-import { SUBTYPES, resolveSubtype } from "@/lib/subtypes";
+import { groupProductsForMenu } from "@/lib/menuGroups";
 import type { BusinessCategory } from "@/lib/types";
 
 type Params = { businessSlug: string };
@@ -57,43 +56,10 @@ export default async function MenuPage({
       : flight.items.some((item) => item.product.status === "PUBLISHED")
   );
 
-  // Two levels: kind of drink (Wine / Beer / Spirits / Cocktails), then
-  // style within it (Red / White …, IPA / Lager …, Whiskey / Gin …).
-  // Every list keeps the overall order (available first, then sold out,
-  // each alphabetical). Nothing ever disappears: a product whose kind
-  // can't be told goes under "More", and one whose style can't be told
-  // goes under "Other" at the end of its section.
-  type MenuProduct = (typeof products)[number];
-  type MenuGroup = { key: string; label: string | null; products: MenuProduct[] };
-  const category = business.category as BusinessCategory;
-  const typeOf = (product: MenuProduct) => inferProductType(product, category) ?? "MORE";
-
-  const sections = [...menuSectionOrder(category), "MORE" as const]
-    .map((key) => {
-      const sectionProducts = products.filter((product) => typeOf(product) === key);
-      let groups: MenuGroup[];
-      if (key === "MORE") {
-        groups = [{ key: "ALL", label: null, products: sectionProducts }];
-      } else {
-        const styleOf = (product: MenuProduct) => resolveSubtype(key, product) ?? "OTHER";
-        groups = SUBTYPES[key]
-          .map((subtype) => ({
-            key: subtype.id,
-            label: subtype.label as string | null,
-            products: sectionProducts.filter((product) => styleOf(product) === subtype.id),
-          }))
-          .filter((group) => group.products.length > 0);
-        // A section that's all "Other" doesn't need the subheading.
-        if (groups.length === 1 && groups[0].key === "OTHER") groups[0].label = null;
-      }
-      return {
-        key,
-        label: key === "MORE" ? "More" : MENU_SECTION_LABELS[key],
-        count: sectionProducts.length,
-        groups,
-      };
-    })
-    .filter((section) => section.count > 0);
+  // Wine / Beer / Spirits / Cocktails, each split by style (Red, IPA, Gin
+  // …) — see lib/menuGroups.ts. Within each group, available products come
+  // before sold-out ones, each alphabetical (the query's order).
+  const sections = groupProductsForMenu(products, business.category as BusinessCategory);
 
   const p = cardPalette(business.primaryColor, business.accentColor);
 

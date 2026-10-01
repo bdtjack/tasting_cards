@@ -8,6 +8,8 @@ import { updateFlight, deleteFlight } from "./actions";
 import { LIMITS } from "@/lib/validate";
 import { FLIGHT_ERROR_MESSAGES } from "@/lib/formErrors";
 import FlightProductPicker from "@/components/FlightProductPicker";
+import { PICKER_PRODUCT_SELECT, toPickerProducts } from "@/lib/menuGroups";
+import type { BusinessCategory } from "@/lib/types";
 import ConfirmDeleteForm from "@/components/ConfirmDeleteForm";
 import FormError, { NOT_BLANK } from "@/components/FormError";
 
@@ -43,8 +45,11 @@ export default async function EditFlightPage({
       OR: [{ status: "PUBLISHED" }, { id: { in: selectedProductIds }, status: "ARCHIVED" }],
     },
     orderBy: { name: "asc" },
-    select: { id: true, name: true, category: true, status: true },
+    select: PICKER_PRODUCT_SELECT,
   });
+  // Grouped like the guest menu (Wine → Red / White …) so it's easy to see
+  // what's available while building the flight.
+  const pickerProducts = toPickerProducts(products, business.category as BusinessCategory);
 
   const isBuildYourOwn = flight.kind === "BUILD_YOUR_OWN";
   const guestPath = `/${business.slug}/flights/${flight.slug}`;
@@ -141,7 +146,7 @@ export default async function EditFlightPage({
         ) : (
           <div className="border-t border-neutral-200 pt-4">
             <p className="text-sm font-medium text-neutral-600 mb-3">Products</p>
-            <FlightProductPicker products={products} initialSelectedIds={selectedProductIds} />
+            <FlightProductPicker products={pickerProducts} initialSelectedIds={selectedProductIds} />
           </div>
         )}
 
