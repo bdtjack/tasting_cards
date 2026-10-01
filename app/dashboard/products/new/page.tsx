@@ -11,6 +11,7 @@ import { getCurrentBusiness } from "@/lib/auth";
 import { uploadFolderFor } from "@/lib/blob";
 import ImageUpload from "@/components/ImageUpload";
 import CountedTextarea from "@/components/CountedTextarea";
+import SubtypeSelect from "@/components/SubtypeSelect";
 import FormError, { NOT_BLANK } from "@/components/FormError";
 import { LIMITS } from "@/lib/validate";
 import { PRODUCT_ERROR_MESSAGES } from "@/lib/formErrors";
@@ -92,6 +93,8 @@ export default async function NewProductPage({
             <input name="subtitle" maxLength={LIMITS.subtitle} className="input" />
           </Field>
         </div>
+
+        <SubtypeSelect type={productType} defaultValue={null} />
 
         <div>
           <Field label="Proof / ABV (leave blank if not applicable)">

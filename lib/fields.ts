@@ -1,4 +1,5 @@
 import type { BusinessCategory, ProductType } from "./types";
+import { parseJsonField } from "./json";
 
 export const PRODUCT_TYPES: ProductType[] = ["WINE", "BEER", "SPIRIT", "COCKTAIL"];
 
@@ -81,4 +82,45 @@ export function getPriceLabels(type: ProductType): string[] {
     case "COCKTAIL":
       return ["Price"];
   }
+}
+
+/** Section headings on the guest-facing menu, one per product type. */
+export const MENU_SECTION_LABELS: Record<ProductType, string> = {
+  WINE: "Wine",
+  BEER: "Beer",
+  SPIRIT: "Spirits",
+  COCKTAIL: "Cocktails",
+};
+
+/**
+ * The order menu sections appear in: the business's own kind of drink
+ * first (beer first for a brewery, etc.), then the rest. Mixed businesses
+ * get wine, beer, spirits, cocktails.
+ */
+export function menuSectionOrder(category: BusinessCategory): ProductType[] {
+  const primary = getPrimaryProductType(category);
+  return primary ? [primary, ...PRODUCT_TYPES.filter((type) => type !== primary)] : PRODUCT_TYPES;
+}
+
+/**
+ * A product's type, for grouping it on the menu. Products created before
+ * the type was stored (productType is null) are worked out from the price
+ * fields they were created with — Glass/Bottle means wine, Oz/Bottle
+ * spirits, Taste/Pour/Pack beer, a single Price a cocktail — and failing
+ * that, from the business's category. Null means it can't be told (a
+ * MIXED business with no clue in the prices).
+ */
+export function inferProductType(
+  product: { productType: string | null; priceLabels: string | null },
+  category: BusinessCategory
+): ProductType | null {
+  if (isProductType(product.productType)) return product.productType;
+
+  const labels = parseJsonField<string[]>(product.priceLabels, []);
+  if (labels.some((label) => label.startsWith("Glass"))) return "WINE";
+  if (labels.includes("Oz")) return "SPIRIT";
+  if (labels.some((label) => ["Taste", "Pour", "Pack"].includes(label))) return "BEER";
+  if (labels.length === 1 && labels[0] === "Price") return "COCKTAIL";
+
+  return getPrimaryProductType(category);
 }

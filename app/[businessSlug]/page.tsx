@@ -5,6 +5,9 @@ import { getBusinessBySlug } from "@/lib/queries";
 import { cardPalette } from "@/lib/color";
 import CardHeader from "@/components/CardHeader";
 import { cardFontStyle } from "@/lib/cardFonts";
+import { MENU_SECTION_LABELS, inferProductType, menuSectionOrder } from "@/lib/fields";
+import { SUBTYPES, resolveSubtype } from "@/lib/subtypes";
+import type { BusinessCategory } from "@/lib/types";
 
 type Params = { businessSlug: string };
 
@@ -54,6 +57,44 @@ export default async function MenuPage({
       : flight.items.some((item) => item.product.status === "PUBLISHED")
   );
 
+  // Two levels: kind of drink (Wine / Beer / Spirits / Cocktails), then
+  // style within it (Red / White …, IPA / Lager …, Whiskey / Gin …).
+  // Every list keeps the overall order (available first, then sold out,
+  // each alphabetical). Nothing ever disappears: a product whose kind
+  // can't be told goes under "More", and one whose style can't be told
+  // goes under "Other" at the end of its section.
+  type MenuProduct = (typeof products)[number];
+  type MenuGroup = { key: string; label: string | null; products: MenuProduct[] };
+  const category = business.category as BusinessCategory;
+  const typeOf = (product: MenuProduct) => inferProductType(product, category) ?? "MORE";
+
+  const sections = [...menuSectionOrder(category), "MORE" as const]
+    .map((key) => {
+      const sectionProducts = products.filter((product) => typeOf(product) === key);
+      let groups: MenuGroup[];
+      if (key === "MORE") {
+        groups = [{ key: "ALL", label: null, products: sectionProducts }];
+      } else {
+        const styleOf = (product: MenuProduct) => resolveSubtype(key, product) ?? "OTHER";
+        groups = SUBTYPES[key]
+          .map((subtype) => ({
+            key: subtype.id,
+            label: subtype.label as string | null,
+            products: sectionProducts.filter((product) => styleOf(product) === subtype.id),
+          }))
+          .filter((group) => group.products.length > 0);
+        // A section that's all "Other" doesn't need the subheading.
+        if (groups.length === 1 && groups[0].key === "OTHER") groups[0].label = null;
+      }
+      return {
+        key,
+        label: key === "MORE" ? "More" : MENU_SECTION_LABELS[key],
+        count: sectionProducts.length,
+        groups,
+      };
+    })
+    .filter((section) => section.count > 0);
+
   const p = cardPalette(business.primaryColor, business.accentColor);
 
   return (
@@ -71,10 +112,13 @@ export default async function MenuPage({
         </div>
 
         {flights.length > 0 && (
-          <div className="px-6 pb-5">
-            <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: p.accentText }}>
+          <div className="px-6 pb-8">
+            <h2
+              className="font-serif text-2xl leading-tight pb-2 mb-3 border-b"
+              style={{ color: p.heading, borderColor: `${p.accent}40` }}
+            >
               Tasting flights
-            </p>
+            </h2>
             <div className="space-y-2">
               {flights.map((flight) => (
                 <a
@@ -110,39 +154,60 @@ export default async function MenuPage({
         )}
 
         <div className="px-6 pb-6">
-          <p className="text-xs tracking-wider uppercase mb-2.5" style={{ color: p.accentText }}>
-            All products
-          </p>
-          {products.length === 0 ? (
+          {sections.length === 0 ? (
             <p className="text-sm" style={{ color: `${p.accentText}AA` }}>
               Nothing on the menu yet.
             </p>
           ) : (
-            <div>
-              {products.map((product, i) => (
-                <a
-                  key={product.id}
-                  href={`/${business.slug}/${product.slug}`}
-                  className={`flex items-center justify-between gap-3 py-3 ${i > 0 ? "border-t" : ""}`}
-                  style={{ borderColor: `${p.accent}20` }}
-                >
-                  <span>
-                    <span className="block text-base" style={{ color: p.heading }}>
-                      {product.name}
-                    </span>
-                    <span className="block text-sm" style={{ color: `${p.accentText}AA` }}>
-                      {[product.category, product.subtitle].filter(Boolean).join(" · ")}
-                    </span>
-                  </span>
-                  {product.status === "ARCHIVED" && (
-                    <span
-                      className="text-xs px-2.5 py-1 rounded-md flex-shrink-0"
-                      style={{ backgroundColor: `${p.accent}20`, color: p.accentText }}
-                    >
-                      Sold out
-                    </span>
-                  )}
-                </a>
+            <div className="space-y-8">
+              {sections.map((section) => (
+                <section key={section.key}>
+                  <h2
+                    className="font-serif text-2xl leading-tight pb-2 border-b"
+                    style={{ color: p.heading, borderColor: `${p.accent}40` }}
+                  >
+                    {section.label}
+                  </h2>
+                  <div className="space-y-3 mt-3">
+                    {section.groups.map((group) => (
+                      <div key={group.key}>
+                        {group.label && (
+                          <h3
+                            className="text-xs tracking-wider uppercase pt-1"
+                            style={{ color: p.accentText }}
+                          >
+                            {group.label}
+                          </h3>
+                        )}
+                        {group.products.map((product, i) => (
+                          <a
+                            key={product.id}
+                            href={`/${business.slug}/${product.slug}`}
+                            className={`flex items-center justify-between gap-3 py-3 ${i > 0 ? "border-t" : ""}`}
+                            style={{ borderColor: `${p.accent}20` }}
+                          >
+                            <span>
+                              <span className="block text-base" style={{ color: p.heading }}>
+                                {product.name}
+                              </span>
+                              <span className="block text-sm" style={{ color: `${p.accentText}AA` }}>
+                                {[product.category, product.subtitle].filter(Boolean).join(" · ")}
+                              </span>
+                            </span>
+                            {product.status === "ARCHIVED" && (
+                              <span
+                                className="text-xs px-2.5 py-1 rounded-md flex-shrink-0"
+                                style={{ backgroundColor: `${p.accent}20`, color: p.accentText }}
+                              >
+                                Sold out
+                              </span>
+                            )}
+                          </a>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}

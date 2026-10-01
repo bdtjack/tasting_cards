@@ -111,6 +111,12 @@ model Product {
   // it per product. Null on products created before this field existed.
   productType String?
 
+  // Which subsection of the guest menu it's listed under: Red / White …
+  // for wine, Whiskey / Gin … for spirits and cocktails, IPA / Lager … for
+  // beer. One of the ids in lib/subtypes.ts. Null on products saved before
+  // this existed — the menu guesses from the name/category instead.
+  subtype String?
+
   // Free-form details the business wants to show: mash bill, grape
   // breakdown, hops/malt bill, etc.
   description String?

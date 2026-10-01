@@ -5,7 +5,8 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentBusiness } from "@/lib/auth";
 import { deleteReplacedImage } from "@/lib/blob";
-import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
+import { getPriceLabels, getPrimaryProductType, inferProductType, isProductType } from "@/lib/fields";
+import { readSubtype } from "@/lib/subtypes";
 import { parseJsonField } from "@/lib/json";
 import { LIMITS, cleanText, optionalText, optionalUrl } from "@/lib/validate";
 import type { BusinessCategory, ProductStatus } from "@/lib/types";
@@ -61,10 +62,16 @@ export async function updateProduct(formData: FormData) {
     if (value) priceValues[label] = value;
   }
 
+  // Products from before types were stored get one saved now, worked out
+  // the same way the menu does, so they stop relying on guesswork.
+  const productType = inferProductType(product, business.category as BusinessCategory);
+
   await prisma.product.update({
     where: { id },
     data: {
       name,
+      productType: product.productType ?? productType,
+      subtype: productType ? readSubtype(formData, productType) : product.subtype,
       category: cleanText(formData.get("category"), LIMITS.category),
       subtitle: optionalText(formData.get("subtitle"), LIMITS.subtitle),
       proofAbv: optionalText(formData.get("proofAbv"), LIMITS.proofAbv),

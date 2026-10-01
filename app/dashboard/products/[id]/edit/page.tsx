@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getPriceLabels, getPrimaryProductType, isProductType } from "@/lib/fields";
+import { getPriceLabels, getPrimaryProductType, inferProductType, isProductType } from "@/lib/fields";
+import { resolveSubtype } from "@/lib/subtypes";
 import { parseJsonField } from "@/lib/json";
 import { getCurrentBusiness } from "@/lib/auth";
 import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
@@ -10,6 +11,7 @@ import { LIMITS } from "@/lib/validate";
 import { PRODUCT_ERROR_MESSAGES } from "@/lib/formErrors";
 import ImageUpload from "@/components/ImageUpload";
 import CountedTextarea from "@/components/CountedTextarea";
+import SubtypeSelect from "@/components/SubtypeSelect";
 import FormError, { NOT_BLANK } from "@/components/FormError";
 import type { BusinessCategory } from "@/lib/types";
 import { updateProduct, setProductStatus } from "./actions";
@@ -45,6 +47,9 @@ export default async function EditProductPage({
         : getPrimaryProductType(business.category as BusinessCategory) ?? "SPIRIT"
     );
   const prices = parseJsonField<Record<string, string>>(product.prices, {});
+  // Older products may have no stored type; work it out so the menu-group
+  // picker can still be shown (pre-filled with the menu's best guess).
+  const productType = inferProductType(product, business.category as BusinessCategory);
   const guestPath = `/${business.slug}/${product.slug}`;
   const qrTarget = `${displayHost(await baseUrlForPage())}${guestPath}`;
 
@@ -84,6 +89,10 @@ export default async function EditProductPage({
             <input name="subtitle" maxLength={LIMITS.subtitle} defaultValue={product.subtitle ?? ""} className="input" />
           </Field>
         </div>
+
+        {productType && (
+          <SubtypeSelect type={productType} defaultValue={resolveSubtype(productType, product)} />
+        )}
 
         <div>
           <Field label="Proof / ABV (leave blank if not applicable)">

@@ -6,6 +6,7 @@ import { getPriceLabels, resolveProductType } from "@/lib/fields";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createWithFreshSlug, uniqueProductSlug } from "@/lib/uniqueSlug";
 import { LIMITS, cleanText, optionalText, optionalUrl } from "@/lib/validate";
+import { readSubtype } from "@/lib/subtypes";
 import type { BusinessCategory } from "@/lib/types";
 
 export async function createProduct(formData: FormData) {
@@ -49,6 +50,7 @@ export async function createProduct(formData: FormData) {
           category: cleanText(formData.get("category"), LIMITS.category),
           subtitle: optionalText(formData.get("subtitle"), LIMITS.subtitle),
           productType,
+          subtype: readSubtype(formData, productType),
           photoUrl,
           description: optionalText(formData.get("description"), LIMITS.description),
           // The checkbox starts ticked or not based on the product type
