@@ -4,6 +4,19 @@ import { useEffect, useRef, useState } from "react";
 import { toPng } from "html-to-image";
 
 /**
+ * iPhone/iPad (including iPads that report themselves as a Mac).
+ * iOS Safari drops the attached image if navigator.share() is also given
+ * any title or text, so on these devices the image has to go out alone.
+ */
+function isAppleMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+}
+
+/**
  * Handles "Save card" (download a PNG snapshot of the referenced element)
  * and "Share" (send that same image via the phone's native share sheet,
  * falling back to sharing the link, then to copying the link) for any
@@ -38,10 +51,18 @@ export function useCardShare({
 
   async function makeCardPng(): Promise<string> {
     if (!cardRef.current) throw new Error("Card not rendered yet");
-    return toPng(cardRef.current, {
+    const options = {
       pixelRatio: 2,
-      filter: (node) => !(node instanceof HTMLElement && node.hasAttribute("data-no-snapshot")),
-    });
+      filter: (node: HTMLElement) =>
+        !(node instanceof HTMLElement && node.hasAttribute("data-no-snapshot")),
+    };
+    // iOS Safari often leaves the logo, photo or fonts out of the FIRST
+    // snapshot (they haven't been decoded yet). A throwaway warm-up render
+    // makes the real one come out complete.
+    if (isAppleMobile()) {
+      await toPng(cardRef.current, options).catch(() => {});
+    }
+    return toPng(cardRef.current, options);
   }
 
   async function makeCardFile(): Promise<File> {
@@ -103,11 +124,14 @@ export function useCardShare({
       }
       if (file && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({
-            files: [file],
-            title,
-            text: imageOnly ? text : `${text} ${url}`,
-          });
+          // iPhones: image only. Adding a title or text makes iOS drop the
+          // image and send just the text (so Facebook etc. got no picture).
+          // Android keeps both, so it still gets the caption and link.
+          await navigator.share(
+            isAppleMobile()
+              ? { files: [file] }
+              : { files: [file], title, text: imageOnly ? text : `${text} ${url}` },
+          );
           return;
         } catch (err) {
           // Guest closed the share sheet: done, nothing to report.
