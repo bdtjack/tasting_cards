@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isSignupOpen } from "@/lib/signupGate";
 
 export default function HomePage() {
   return (
@@ -7,6 +8,11 @@ export default function HomePage() {
       <Link href="/dashboard" className="text-sm underline">
         Go to dashboard
       </Link>
+      {isSignupOpen() && (
+        <Link href="/signup" className="text-sm underline">
+          Create an account
+        </Link>
+      )}
     </main>
   );
 }

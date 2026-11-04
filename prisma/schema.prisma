@@ -43,6 +43,10 @@ model Business {
   email        String @unique
   passwordHash String
 
+  // When the owner ticked "I agree to the Terms of Service" at signup.
+  // Null for accounts created by the seed scripts before signup existed.
+  termsAcceptedAt DateTime?
+
   // Theme fields — applied to every guest-facing card for this business.
   logoUrl      String?
   primaryColor String @default("#0D0D0D")

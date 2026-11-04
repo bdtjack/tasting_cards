@@ -63,14 +63,31 @@ guest-facing card instead of a printed one.
 - **Seed data** — Hidden Hills Farm and Vineyard, 10 wines, a "Reserve
   Flight" and a build-your-own flight.
 
+## Signup
+
+New businesses create their own account at `/signup`: business name, the
+web address for their cards (checked live as they type, and rejected if
+it's taken or a reserved word like `dashboard`), type of business, email,
+password, and a Terms of Service checkbox. They're logged straight in and
+land on Settings with a welcome note.
+
+**Signup is off until you turn it on.** Set `SIGNUP_OPEN` = `true` in
+Vercel's environment variables and redeploy. While it's off, `/signup`
+shows "Sign-ups open soon" and the login and home pages don't link to it.
+Leave it off in Production until:
+
+- `/terms` and `/privacy` pages exist (the signup checkbox links to them),
+- Stripe billing is connected. The card is collected at signup; the spot
+  for that is marked `BILLING:` in `app/signup/actions.ts`.
+
+To try it before then, turn it on, sign up a test business, then turn it
+off again.
+
+Signup needs the `termsAcceptedAt` column, so run `npm run db:push` before
+deploying this version.
+
 ## What's NOT here yet
 
-- **Signup.** New businesses still need a row inserted directly (seed
-  script or `npx prisma studio`). When signup is built, it must:
-  normalize emails with `normalizeEmail()` (lib/auth.ts), and reject
-  business slugs that are taken or reserved (`isReservedBusinessSlug()` in
-  lib/slug.ts — words like `dashboard` or `login` would make that
-  business's pages unreachable).
 - **Billing.**
 - **CSV batch import.**
 - **Scan analytics beyond a view count.**

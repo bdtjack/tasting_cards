@@ -1,5 +1,7 @@
 import { login } from "./actions";
+import Link from "next/link";
 import { LOGIN_LOCKOUT_MINUTES } from "@/lib/loginThrottle";
+import { isSignupOpen } from "@/lib/signupGate";
 
 export default async function LoginPage({
   searchParams,
@@ -44,6 +46,15 @@ export default async function LoginPage({
             Log in
           </button>
         </form>
+
+        {isSignupOpen() && (
+          <p className="text-sm text-neutral-500 mt-6">
+            New to Pour Tags?{" "}
+            <Link href="/signup" className="underline">
+              Create an account
+            </Link>
+          </p>
+        )}
       </div>
     </main>
   );

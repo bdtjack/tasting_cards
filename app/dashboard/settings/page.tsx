@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/auth";
 import { baseUrlForPage, displayHost } from "@/lib/baseUrl";
@@ -22,12 +23,18 @@ const PASSWORD_ERROR_MESSAGES: Record<string, string> = {
 export default async function SettingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ saved?: string; error?: string; pwSaved?: string; pwError?: string }>;
+  searchParams: Promise<{
+    saved?: string;
+    error?: string;
+    pwSaved?: string;
+    pwError?: string;
+    welcome?: string;
+  }>;
 }) {
   const business = await getCurrentBusiness();
   if (!business) redirect("/login");
 
-  const { saved, error, pwSaved, pwError } = await searchParams;
+  const { saved, error, pwSaved, pwError, welcome } = await searchParams;
   const host = displayHost(await baseUrlForPage());
 
   return (
@@ -37,6 +44,19 @@ export default async function SettingsPage({
         This applies to every guest-facing card you publish.
       </p>
 
+      {welcome && (
+        <div className="text-sm text-neutral-700 bg-white border border-neutral-200 rounded-md px-4 py-3 mb-6">
+          <p className="font-medium mb-1">Welcome to Pour Tags, {business.name}!</p>
+          <p className="text-neutral-600">
+            Start here: add your logo, pick your colors and heading font, and add your
+            mailing list link. Then go to{" "}
+            <Link href="/dashboard/products/new" className="underline">
+              Products
+            </Link>{" "}
+            to add your first product and download its QR code.
+          </p>
+        </div>
+      )}
       {saved && (
         <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2 mb-4">
           Saved.

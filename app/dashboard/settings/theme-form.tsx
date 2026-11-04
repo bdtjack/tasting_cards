@@ -4,17 +4,12 @@ import { useState } from "react";
 import { updateBusinessTheme } from "./actions";
 import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
 import { LIMITS } from "@/lib/validate";
+import { BUSINESS_CATEGORY_OPTIONS } from "@/lib/types";
 import ImageUpload from "@/components/ImageUpload";
 import { cardPalette } from "@/lib/color";
 import { cardFontFamily, cardFontStyle } from "@/lib/cardFonts";
 import { CARD_FONT_IDS, CARD_FONT_OPTIONS, resolveCardFont } from "@/lib/fontOptions";
 
-const CATEGORIES = [
-  { value: "WINERY", label: "Winery" },
-  { value: "BREWERY", label: "Brewery" },
-  { value: "DISTILLERY", label: "Distillery" },
-  { value: "MIXED", label: "Mixed" },
-];
 
 export default function ThemeForm({
   business,
@@ -68,7 +63,7 @@ export default function ThemeForm({
             onChange={(e) => setCategory(e.target.value)}
             className="input"
           >
-            {CATEGORIES.map((c) => (
+            {BUSINESS_CATEGORY_OPTIONS.map((c) => (
               <option key={c.value} value={c.value}>
                 {c.label}
               </option>

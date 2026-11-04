@@ -5,6 +5,14 @@
 
 export type BusinessCategory = "WINERY" | "BREWERY" | "DISTILLERY" | "MIXED";
 
+// The choices shown in the signup form and the settings page.
+export const BUSINESS_CATEGORY_OPTIONS: { value: BusinessCategory; label: string }[] = [
+  { value: "WINERY", label: "Winery" },
+  { value: "BREWERY", label: "Brewery" },
+  { value: "DISTILLERY", label: "Distillery" },
+  { value: "MIXED", label: "Mixed" },
+];
+
 export type ProductType = "WINE" | "BEER" | "SPIRIT" | "COCKTAIL";
 
 export type ProductStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";

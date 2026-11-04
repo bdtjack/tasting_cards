@@ -7,6 +7,7 @@ import { getCurrentBusiness, verifyPassword, hashPassword, revokeOtherSessions }
 import { deleteReplacedImage } from "@/lib/blob";
 import { isCardFontId } from "@/lib/fontOptions";
 import { MAX_SHARE_PHRASE_LENGTH } from "@/lib/shareCaption";
+import { PASSWORD_MIN_LENGTH } from "@/lib/signupRules";
 import { LIMITS, cleanText, isBusinessCategory, isHexColor, optionalText, optionalUrl } from "@/lib/validate";
 
 export async function updateBusinessTheme(formData: FormData) {
@@ -70,7 +71,7 @@ export async function changePassword(formData: FormData) {
     redirect("/dashboard/settings?pwError=current");
   }
 
-  if (newPassword.length < 8) {
+  if (newPassword.length < PASSWORD_MIN_LENGTH) {
     redirect("/dashboard/settings?pwError=short");
   }
 
