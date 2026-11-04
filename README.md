@@ -1,4 +1,6 @@
-# Tasting Cards
+# Pour Tags
+
+Live at https://pourtags.jfmconceptsllc.com
 
 Digital tasting card platform — QR codes that link to a branded, editable
 guest-facing card instead of a printed one.
@@ -127,10 +129,18 @@ address. `lib/baseUrl.ts` decides, in this order:
    deployment, previews included, to the project's production domain).
 3. The address the dashboard was opened on (local development only).
 
-**Once you have a custom domain, set `APP_BASE_URL` (e.g.
-`https://pourtags.com`) in Vercel's Production environment variables,
-and redeploy, before printing any QR codes.** Check the "Points to …" line
+**Production domain: `https://pourtags.jfmconceptsllc.com`.** Set `APP_BASE_URL` to exactly
+that in Vercel's Production environment variables, and redeploy, before
+printing any QR codes. Check the "Points to …" line
 under any QR code in the dashboard to confirm.
+
+### Custom domain setup
+
+1. Vercel → project → Settings → Domains → add `pourtags.jfmconceptsllc.com`.
+2. At the registrar for `jfmconceptsllc.com`, add a DNS record:
+   `CNAME` · host `pourtags` · value = the target Vercel shows on the Domains page.
+3. Wait for the domain to show as valid in Vercel (HTTPS is automatic),
+   then redeploy so `APP_BASE_URL` takes effect.
 
 ## Security notes
 

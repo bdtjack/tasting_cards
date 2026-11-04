@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tasting Cards",
+  title: "Pour Tags",
   description: "Digital tasting cards for breweries, wineries, and distilleries",
 };
 

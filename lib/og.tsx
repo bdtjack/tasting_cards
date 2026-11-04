@@ -89,7 +89,7 @@ export function fallbackOgImage() {
           fontSize: 48,
         }}
       >
-        Tasting Cards
+        Pour Tags
       </div>
     ),
     { ...OG_SIZE, headers: { "cache-control": "public, max-age=60, s-maxage=60" } }

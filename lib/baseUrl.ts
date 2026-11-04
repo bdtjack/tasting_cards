@@ -9,8 +9,8 @@ import { headers } from "next/headers";
  * domain exists). In order of preference:
  *
  *   1. APP_BASE_URL, if set — set this in Vercel's Production environment
- *      variables to your custom domain (e.g. https://pourtags.com) once you
- *      have one. It always wins.
+ *      variables to your custom domain (https://pourtags.jfmconceptsllc.com).
+ *      It always wins.
  *   2. VERCEL_PROJECT_PRODUCTION_URL — set automatically by Vercel on every
  *      deployment (preview ones too) to the project's production domain.
  *   3. The address of the current request (local development).
@@ -31,7 +31,7 @@ export async function baseUrlForPage(): Promise<string> {
   return resolveBaseUrl(`${proto}://${host}`);
 }
 
-/** "https://pourtags.com" → "pourtags.com", for showing addresses to people. */
+/** "https://pourtags.jfmconceptsllc.com" → "pourtags.jfmconceptsllc.com", for showing addresses to people. */
 export function displayHost(baseUrl: string): string {
   return baseUrl.replace(/^https?:\/\//, "");
 }
